@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +9,7 @@
         @apply antialiased text-slate-800 bg-slate-50 relative overflow-x-hidden;
     }
 
-    /* Mesh Background */
+    /* Mesh Background - Optional, can remove if interfering with Home design */
     body::before {
         content: "";
         @apply fixed inset-0 z-[-1];
@@ -42,6 +44,10 @@
 }
 
 @layer utilities {
+    .font-serif {
+        font-family: 'Playfair Display', serif;
+    }
+
     .animate-fade-in-up {
         animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
@@ -74,54 +80,18 @@
         }
     }
 
-    /* Graphics Animations */
-    .animate-float-slow {
-        animation: float 8s ease-in-out infinite;
+    /* Marquee Animation */
+    .animate-marquee {
+        animation: marquee 25s linear infinite;
     }
 
-    .animate-scan {
-        animation: scan 4s linear infinite;
-    }
-
-    .animate-rotate-slow {
-        animation: rotate 20s linear infinite;
-    }
-
-    @keyframes float {
-
-        0%,
-        100% {
-            transform: translateY(0px) rotate(0deg);
-        }
-
-        50% {
-            transform: translateY(-10px) rotate(2deg);
-        }
-    }
-
-    @keyframes scan {
+    @keyframes marquee {
         0% {
-            transform: translateX(-100%);
-            opacity: 0;
-        }
-
-        50% {
-            opacity: 1;
+            transform: translateX(0);
         }
 
         100% {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-
-    @keyframes rotate {
-        from {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
+            transform: translateX(-50%);
         }
     }
 }

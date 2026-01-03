@@ -1,44 +1,104 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAssessment } from '../../context/AssessmentContext';
 
 const DetailedHistoryStep = () => {
-    const { diabetesData, setDiabetesData, heartData, setHeartData, nextStep, prevStep, calculateRisk } = useAssessment();
+    const {
+        userInfo,
+        setUserInfo,
+        prevStep,
+        calculateRisk,
+        // Removed separate familyHistory/setFamilyHistory since we rely on diabetesData
+        diabetesData,
+        setDiabetesData,
+        heartData,
+        setHeartData
+    } = useAssessment();
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const handleMetabolicChange = (e) => {
-        const { name, value } = e.target;
-        setDiabetesData(prev => ({ ...prev, [name]: parseFloat(value) }));
+    const handlePregnanciesChange = (e) => {
+        setUserInfo(prev => ({ ...prev, pregnancies: e.target.value }));
     };
 
-    const handleCardioChange = (e) => {
-        const { name, value } = e.target;
-        setHeartData(prev => ({ ...prev, value }));
+    const handleFamilyHistoryChange = (e) => {
+        const isChecked = e.target.checked;
+        // Update the diabetesData to ensure it's captured in the risk calculation
+        setDiabetesData(prev => ({ ...prev, familyHistory: isChecked }));
+    };
+
+    const handleSubmit = async () => {
+        setIsProcessing(true);
+        // Simulate a "thinking" time for the AI
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await calculateRisk();
+        setIsProcessing(false);
     };
 
     return (
-        <div className="max-w-3xl mx-auto animate-fade-in-up">
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-50 text-cyan-600 mb-5 shadow-sm border border-cyan-100">
-                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                </div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Detailed History</h2>
-                <p className="text-slate-500 dark:text-slate-400 mt-2">Specific symptoms & risk factors.</p>
+        <div className="max-w-xl mx-auto animate-fade-in-up">
+            <div className="mb-10 text-center md:text-left">
+                <h2 className="font-serif text-4xl font-bold text-stone-900 mb-2">Detailed History.</h2>
+                <p className="text-lg text-stone-500">A few final details to refine the prediction.</p>
             </div>
 
-            <div className="bg-white/70 dark:bg-slate-800/50 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 dark:border-slate-700 space-y-8">
+            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(231,229,228,0.5)] border border-stone-100 space-y-8 relative overflow-hidden">
+                {/* Decorative Circle */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-rose-50 rounded-full blur-[80px] -z-0 pointer-events-none opacity-60"></div>
 
-                {/* Chest Pain Selection */}
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 pl-1">Chest Pain Type</label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {userInfo.sex === 'female' && (
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 text-lg">🤰</div>
+                            <label className="font-bold text-stone-700">Pregnancies</label>
+                        </div>
+                        <input
+                            type="number"
+                            value={userInfo.pregnancies}
+                            onChange={handlePregnanciesChange}
+                            className="w-full px-6 py-4 rounded-2xl bg-stone-50 border-2 border-transparent focus:bg-white focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 transition-all outline-none font-medium text-stone-800 placeholder:text-stone-300 text-lg"
+                            placeholder="Number of pregnancies"
+                        />
+                    </div>
+                )}
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-lg">🧬</div>
+                        <label className="font-bold text-stone-700">Family History</label>
+                    </div>
+                    <label className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all cursor-pointer ${diabetesData.familyHistory
+                            ? 'bg-amber-50 border-amber-200 shadow-sm'
+                            : 'bg-stone-50 border-transparent hover:bg-stone-100'
+                        }`}>
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${diabetesData.familyHistory ? 'bg-amber-500 border-amber-500' : 'border-stone-300 bg-white'
+                            }`}>
+                            {diabetesData.familyHistory && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+                        <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={diabetesData.familyHistory}
+                            onChange={handleFamilyHistoryChange}
+                        />
+                        <span className="font-medium text-stone-600">
+                            Immediate family history of Diabetes or Heart Disease
+                        </span>
+                    </label>
+                </div>
+
+                {/* Chest Pain */}
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 text-lg">🫀</div>
+                        <label className="font-bold text-stone-700">Chest Pain Type</label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                         {['typical', 'atypical', 'non-anginal', 'asymptomatic'].map(type => (
                             <button
                                 key={type}
                                 onClick={() => setHeartData(prev => ({ ...prev, chestPain: type }))}
-                                className={`py-4 px-2 rounded-xl text-xs font-bold uppercase tracking-wider border-2 transition-all ${heartData.chestPain === type
-                                    ? 'bg-cyan-50 dark:bg-cyan-900/30 border-cyan-500 text-cyan-700 dark:text-cyan-400 shadow-sm'
-                                    : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-cyan-200 dark:hover:border-cyan-800'
+                                className={`py-3 px-4 rounded-xl text-sm font-bold capitalize transition-all border-2 ${heartData.chestPain === type
+                                    ? 'bg-cyan-50 border-cyan-500 text-cyan-700 shadow-sm'
+                                    : 'bg-stone-50 border-transparent text-stone-500 hover:bg-stone-100'
                                     }`}
                             >
                                 {type.replace('-', ' ')}
@@ -47,54 +107,32 @@ const DetailedHistoryStep = () => {
                     </div>
                 </div>
 
-                {/* Additional Inputs */}
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* Family History */}
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 pl-1">Family History</label>
-                        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                            <button
-                                onClick={() => setDiabetesData(prev => ({ ...prev, familyHistory: true }))}
-                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${diabetesData.familyHistory ? 'bg-white dark:bg-slate-800 text-teal-600 dark:text-teal-400 shadow-sm' : 'text-slate-400'}`}
-                            >
-                                Yes
-                            </button>
-                            <button
-                                onClick={() => setDiabetesData(prev => ({ ...prev, familyHistory: false }))}
-                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${!diabetesData.familyHistory ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm' : 'text-slate-400'}`}
-                            >
-                                No
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 pl-1">Exercise Angina</label>
-                        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                            <button onClick={() => setHeartData(prev => ({ ...prev, exerciseAngina: true }))} className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${heartData.exerciseAngina ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-sm' : 'text-slate-400'}`}>Yes</button>
-                            <button onClick={() => setHeartData(prev => ({ ...prev, exerciseAngina: false }))} className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${!heartData.exerciseAngina ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm' : 'text-slate-400'}`}>No</button>
-                        </div>
-                    </div>
-                    {/* Thalassemia Select */}
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 pl-1">Thalassemia</label>
-                        <select
-                            name="thalassemia"
-                            value={heartData.thalassemia}
-                            onChange={(e) => setHeartData(prev => ({ ...prev, thalassemia: e.target.value }))}
-                            className="w-full px-5 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 focus:border-cyan-500 outline-none font-bold text-slate-700 dark:text-slate-300 appearance-none"
-                        >
-                            <option value="normal">Normal</option>
-                            <option value="fixed">Fixed Defect</option>
-                            <option value="reversible">Reversible</option>
-                        </select>
-                    </div>
+                <div className="flex gap-4 pt-6 relative z-10">
+                    <button
+                        onClick={prevStep}
+                        className="px-8 py-5 rounded-2xl font-bold text-stone-500 bg-stone-50 hover:bg-stone-100 transition-colors"
+                    >
+                        Back
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isProcessing}
+                        className={`flex-1 py-5 rounded-2xl font-bold text-lg tracking-wide transition-all shadow-xl transform hover:-translate-y-1 ${isProcessing
+                                ? 'bg-stone-100 text-stone-400 cursor-wait'
+                                : 'bg-stone-900 text-white shadow-stone-300 hover:shadow-stone-400'
+                            }`}
+                    >
+                        {isProcessing ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-5 w-5 text-stone-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Analyzing...
+                            </span>
+                        ) : 'Generate Report'}
+                    </button>
                 </div>
-            </div>
-
-            <div className="flex gap-4 mt-8">
-                <button onClick={prevStep} className="w-1/3 py-4 rounded-xl font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Back</button>
-                <button onClick={calculateRisk} className="flex-1 py-4 rounded-xl font-bold text-lg text-white bg-gradient-to-r from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/40 hover:-translate-y-0.5 transition-all">Generate Report</button>
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAssessment } from '../context/AssessmentContext';
-import RiskCard from '../RiskCard';
+import RiskCard from '../RiskCard'; // We might need to refactor RiskCard too, but let's override styles here first if possible, or assume it adapts to theme
 
 const ResultsDashboard = () => {
     const {
@@ -12,10 +12,10 @@ const ResultsDashboard = () => {
         overallRisk,
         isVerified,
         jumpToStep,
-        debugLog // GET DEBUG LOG
+        debugLog
     } = useAssessment();
 
-    // Generate Dynamic Explanations based on Data
+    // Generate Dynamic Explanations
     const explanations = [];
     if (parseFloat(diabetesData.glucose) > 140) explanations.push("High fasting glucose suggesting insulin resistance.");
     if (parseFloat(diabetesData.bmi) > 30) explanations.push("BMI indicates elevated metabolic risk factors.");
@@ -23,121 +23,177 @@ const ResultsDashboard = () => {
     if (heartData.exerciseAngina) explanations.push("Exercise-induced angina is a significant cardiac indicator.");
     if (parseFloat(heartData.cholesterol) > 240) explanations.push("Elevated serum cholesterol levels detected.");
 
-    // Default explanation if healthy
     if (explanations.length === 0) explanations.push("Key biometric markers are within optimal ranges.");
 
     return (
-        <div className="animate-fade-in-up pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-                <div>
-                    <div className="inline-flex items-center gap-2 mb-2 px-3 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-full text-xs font-bold uppercase tracking-wider border border-teal-100 dark:border-teal-800">
-                        <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-                        Analysis Complete
-                    </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Health Report for <span className="text-teal-600 dark:text-teal-400">{userInfo.name || 'Patient'}</span></h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">AI-powered evaluation of metabolic and cardiovascular indicators.</p>
+        <div className="pb-20 animate-fade-in-up">
+            {/* Header Area */}
+            <div className="mb-12 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider border border-green-100">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Analysis Complete
                 </div>
-                <div className="text-right hidden md:block">
-                    {isVerified ? (
-                        <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800 shadow-sm mb-2">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" /></svg>
-                            <span className="text-xs font-bold uppercase tracking-wider">Verified ML Output</span>
-                        </div>
-                    ) : (
-                        <div className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full border border-amber-100 dark:border-amber-800 shadow-sm mb-2">
-                            <span className="text-xs font-bold uppercase tracking-wider">Offline Estimate</span>
-                        </div>
-                    )}
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Report ID</p>
-                    <p className="font-mono text-slate-600 dark:text-slate-300 font-bold bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-100 dark:border-slate-700 shadow-sm mt-1">#{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
-                    <button
-                        onClick={() => jumpToStep(1)}
-                        className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 underline decoration-2 decoration-cyan-200 mt-2 block ml-auto"
-                    >
-                        New Assessment
-                    </button>
-                </div>
+                <h1 className="font-serif text-4xl md:text-5xl font-bold text-stone-900 mb-2">
+                    Wellness Report <br /> for <span className="text-rose-500 italic">{userInfo.name || 'Patient'}</span>
+                </h1>
+                <p className="text-xl text-stone-500 max-w-2xl">
+                    We've analyzed your bio-markers using our multi-layered prediction models.
+                </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-10">
-                <RiskCard
-                    label="Diabetes Probability"
-                    score={diabetesRisk}
-                    level={diabetesRisk > 60 ? 'high' : diabetesRisk > 30 ? 'moderate' : 'low'}
-                    type="red"
-                />
-                <RiskCard
-                    label="Heart Disease Probability"
-                    score={heartRisk}
-                    level={heartRisk > 60 ? 'high' : heartRisk > 30 ? 'moderate' : 'low'}
-                    type="blue"
-                />
-                <RiskCard
-                    label="Overall Composite Risk"
-                    score={overallRisk}
-                    level={overallRisk > 60 ? 'high' : overallRisk > 30 ? 'moderate' : 'low'}
-                    type="purple"
-                />
+            {/* Main Risk Cards Row */}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+                <div className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-[0_10px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-transform">
+                    <h3 className="text-stone-500 font-bold uppercase text-xs tracking-wider mb-2">Diabetes Risk</h3>
+                    <div className="flex items-baseline gap-1 mb-4">
+                        <span className={`text-4xl font-serif font-bold ${diabetesRisk > 50 ? 'text-rose-500' : 'text-stone-800'}`}>{diabetesRisk}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${diabetesRisk > 50 ? 'bg-rose-500' : 'bg-stone-800'}`} style={{ width: `${diabetesRisk}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-[0_10px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-transform">
+                    <h3 className="text-stone-500 font-bold uppercase text-xs tracking-wider mb-2">Heart Health</h3>
+                    <div className="flex items-baseline gap-1 mb-4">
+                        <span className={`text-4xl font-serif font-bold ${heartRisk > 50 ? 'text-amber-500' : 'text-stone-800'}`}>{heartRisk}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${heartRisk > 50 ? 'bg-amber-500' : 'bg-stone-800'}`} style={{ width: `${heartRisk}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="bg-stone-900 text-white p-6 rounded-[2rem] shadow-xl hover:-translate-y-1 transition-transform relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <h3 className="text-stone-400 font-bold uppercase text-xs tracking-wider mb-2">Composite Score</h3>
+                    <div className="flex items-baseline gap-1 mb-4">
+                        <span className="text-4xl font-serif font-bold text-white">{overallRisk}%</span>
+                        <span className="text-sm font-medium text-stone-400">Total Risk</span>
+                    </div>
+                    <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-white rounded-full" style={{ width: `${overallRisk}%` }}></div>
+                    </div>
+                </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
+                {/* Insights Column */}
                 <div className="md:col-span-2 space-y-8">
-                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 dark:border-slate-700 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 transition-transform duration-700 group-hover:scale-110">
-                            <svg className="w-32 h-32 text-indigo-900 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S5.522 17.057 10 3z" clipRule="evenodd" /></svg>
-                        </div>
-                        <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-6 flex items-center gap-3 relative z-10">
-                            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <div className="bg-white/60 backdrop-blur-md p-8 rounded-[2.5rem] border border-stone-100 shadow-sm">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                             </div>
-                            Key Clinical Insights
-                        </h3>
-                        <div className="space-y-4 relative z-10">
+                            <div>
+                                <h3 className="text-xl font-bold text-stone-900">Clinical Insights</h3>
+                                <p className="text-sm text-stone-500">Based on your provided history.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
                             {explanations.map((exp, i) => (
-                                <div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-indigo-100 transition-colors">
-                                    <span className="mt-1.5 w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></span>
-                                    <p className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed">{exp}</p>
+                                <div key={i} className="flex gap-4 p-5 rounded-2xl bg-white border border-stone-100 items-start">
+                                    <div className="mt-1.5 w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                                    <p className="text-stone-700 font-medium leading-relaxed">{exp}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
+                {/* Metrics Column */}
                 <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-teal-50 to-blue-50 dark:from-slate-800 dark:to-slate-800/80 p-6 rounded-3xl border border-teal-100/50 dark:border-slate-700 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                        <h4 className="font-bold text-teal-900 dark:text-teal-400 mb-6 flex items-center gap-2 relative z-10">
+                    <div className="bg-rose-50/50 p-6 rounded-[2rem] border border-rose-100">
+                        <h4 className="font-bold text-rose-900 mb-6 flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            Profile Metrics
+                            Key Metrics
                         </h4>
-                        <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400 relative z-10">
+                        <div className="space-y-3">
                             {[
-                                { label: 'Glucose', val: `${diabetesData.glucose} mg / dL` },
+                                { label: 'Glucose', val: `${diabetesData.glucose} mg/dL` },
                                 { label: 'Resting BP', val: `${diabetesData.bp} mmHg` },
-                                { label: 'Cholesterol', val: `${heartData.cholesterol} mg / dL` },
+                                { label: 'Cholesterol', val: `${heartData.cholesterol} mg/dL` },
                                 { label: 'BMI', val: diabetesData.bmi },
-                                { label: 'Max HR', val: `${heartData.maxHeartRate} bpm` }
                             ].map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-3 bg-white/60 dark:bg-slate-900/50 rounded-xl border border-white/50 dark:border-slate-700 shadow-sm backdrop-blur-sm">
-                                    <span className="text-slate-500 dark:text-slate-500 font-medium">{item.label}</span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">{item.val}</span>
+                                <div key={idx} className="flex justify-between items-center p-3.5 bg-white rounded-xl border border-rose-100/50">
+                                    <span className="text-stone-500 text-sm font-medium">{item.label}</span>
+                                    <span className="font-bold text-stone-800">{item.val}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/30">
-                        <h4 className="font-bold text-amber-800 dark:text-amber-500 mb-3 text-xs uppercase tracking-widest flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            Disclaimer
-                        </h4>
-                        <p className="text-xs text-amber-800/80 dark:text-amber-500/80 leading-relaxed font-medium">
-                            This analysis uses predictive modeling for educational screening only. It does not constitute a medical diagnosis. Please consult a specialist.
-                        </p>
+                    <div className="bg-stone-50 p-6 rounded-[2rem] border border-stone-100 text-center">
+                        <p className="text-xs text-stone-400 uppercase tracking-widest font-bold mb-4">Report ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+                        <button
+                            onClick={() => jumpToStep(1)}
+                            className="bg-stone-900 text-white w-full py-4 rounded-xl font-bold text-sm hover:bg-stone-800 transition-colors"
+                        >
+                            Start New Assessment
+                        </button>
                     </div>
                 </div>
             </div>
+            {/* Preventive Measures Section */}
+            {(diabetesRisk > 30 || heartRisk > 30) && (
+                <div className="mt-12">
+                    <h2 className="font-serif text-3xl font-bold text-stone-900 mb-6 flex items-center gap-3">
+                        <span className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">🛡️</span>
+                        Personalized Preventive Measures
+                    </h2>
 
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {diabetesRisk > 30 && (
+                            <div className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-50 rounded-bl-[4rem] transition-colors group-hover:bg-rose-100"></div>
+                                <h3 className="font-bold text-lg text-stone-900 mb-4 relative z-10">Metabolic Health</h3>
+                                <ul className="space-y-3 relative z-10">
+                                    <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>
+                                        <span>Prioritize low-glycemic index foods (whole grains, legumes) to stabilize blood sugar.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>
+                                        <span>Aim for 30 mins of moderate activity daily to improve insulin sensitivity.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+
+                        {heartRisk > 30 && (
+                            <div className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-[4rem] transition-colors group-hover:bg-blue-100"></div>
+                                <h3 className="font-bold text-lg text-stone-900 mb-4 relative z-10">Cardiovascular Care</h3>
+                                <ul className="space-y-3 relative z-10">
+                                    <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
+                                        <span>Reduce sodium intake to less than 2,300mg per day to manage blood pressure.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
+                                        <span>Incorporate omega-3 rich foods like fatty fish or walnuts.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-[4rem] transition-colors group-hover:bg-amber-100"></div>
+                            <h3 className="font-bold text-lg text-stone-900 mb-4 relative z-10">General Wellness</h3>
+                            <ul className="space-y-3 relative z-10">
+                                <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                                    <span>Ensure 7-9 hours of quality sleep for metabolic recovery.</span>
+                                </li>
+                                <li className="flex items-start gap-3 text-stone-600 text-sm">
+                                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                                    <span>Practice stress-reduction techniques like deep breathing or meditation.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

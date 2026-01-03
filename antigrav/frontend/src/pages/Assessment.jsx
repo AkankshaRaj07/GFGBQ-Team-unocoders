@@ -50,20 +50,20 @@ const Sidebar = () => {
     ];
 
     return (
-        <div className="w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen fixed left-0 top-0 z-50 p-6 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300">
-            <div className="mb-12 flex items-center gap-3">
-                <div className="bg-gradient-to-br from-cyan-400 to-teal-500 p-2.5 rounded-xl shadow-lg shadow-cyan-500/20">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-80 bg-[#FFFBF7] border-r border-stone-100 flex flex-col h-screen fixed left-0 top-0 z-50 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300 font-sans">
+            <div className="mb-16 flex items-center gap-3">
+                <div className="bg-stone-900 p-2.5 rounded-full shadow-lg shadow-stone-900/10">
+                    <svg className="w-5 h-5 text-[#FFFBF7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
                 <div>
-                    <h1 className="font-bold text-xl text-slate-900 dark:text-white tracking-tight leading-none text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-teal-600">SilentRisk AI</h1>
-                    <span className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">Dashboard</span>
+                    <h1 className="font-serif font-bold text-xl text-stone-900 tracking-tight leading-none">EarlyGuard</h1>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-stone-400 uppercase">Assessment</span>
                 </div>
             </div>
 
-            <nav className="space-y-2 flex-1">
+            <nav className="space-y-3 flex-1">
                 {steps.map((s) => {
                     const isActive = step === s.id;
                     const isPast = step > s.id;
@@ -71,58 +71,36 @@ const Sidebar = () => {
                     return (
                         <div
                             key={s.id}
-                            className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-500 ${isActive
-                                ? 'bg-gradient-to-r from-cyan-500/10 to-teal-500/5 text-cyan-700 dark:text-cyan-400 shadow-sm border border-cyan-100/50 dark:border-cyan-900/30'
+                            className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300 ${isActive
+                                ? 'bg-rose-50 text-rose-900 shadow-sm border border-rose-100'
                                 : isPast
-                                    ? 'text-slate-400 opacity-60'
-                                    : 'text-slate-400 dark:text-slate-500'
+                                    ? 'text-stone-400 opacity-60' // Past steps
+                                    : 'text-stone-500 hover:bg-stone-50' // Future steps
                                 }`}
                         >
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
-                                ? 'bg-gradient-to-br from-cyan-400 to-teal-500 text-white shadow-lg shadow-cyan-500/30'
-                                : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive
+                                ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                                : 'bg-white border border-stone-100 text-stone-300'
                                 }`}>
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={s.icon} /></svg>
+                                {isActive ? (
+                                    <span className="text-xs font-bold">{s.id}</span>
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={s.icon} /></svg>
+                                )}
                             </div>
-                            <span className={`font-bold text-sm tracking-wide ${isActive ? 'font-black' : 'font-medium'}`}>{s.label}</span>
-                            {isActive && (
-                                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></div>
-                            )}
+                            <span className={`font-bold text-sm tracking-wide ${isActive ? 'font-serif' : 'font-medium'}`}>{s.label}</span>
                         </div>
                     );
                 })}
             </nav>
 
-            {/* Theme Toggle */}
-            <div className="mb-6 px-4">
-                <button
-                    onClick={toggleTheme}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 group transition-all"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 shadow-sm flex items-center justify-center text-slate-400 dark:text-slate-300">
-                            {theme === 'dark' ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                            ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                            )}
-                        </div>
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-                    </div>
-                </button>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    System Status
+            <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                <h4 className="font-bold text-stone-800 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    System Live
                 </h4>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Engine Online
-                </div>
-                <p className="mt-3 text-[10px] text-slate-400 leading-relaxed font-medium">
-                    Not a medical diagnosis tool. For screening only.
+                <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
+                    "Health is a relationship between you and your body."
                 </p>
             </div>
         </div>
@@ -132,17 +110,17 @@ const Sidebar = () => {
 const Assessment = () => {
     return (
         <AssessmentProvider>
-            <CursorGlow />
+            {/* Removed CursorGlow for cleaner look, can re-add if needed */}
             <HealthChatbot />
 
-            <div className="min-h-screen font-sans text-slate-800 bg-slate-50 dark:bg-slate-900 selection:bg-cyan-100 selection:text-cyan-900 transition-colors duration-300">
+            <div className="min-h-screen font-sans text-stone-800 bg-[#FFFBF7] selection:bg-rose-100 selection:text-rose-900 transition-colors duration-300">
                 <Sidebar />
                 <main className="ml-80 p-10 min-h-screen flex items-center justify-center relative">
-                    {/* Background Glows matching Figma */}
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-80 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+                    {/* Organic Background Blobs */}
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-200/20 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+                    <div className="absolute bottom-0 left-80 w-[500px] h-[500px] bg-amber-100/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
 
-                    <div className="w-full max-w-4xl">
+                    <div className="w-full max-w-3xl relative z-10">
                         <WizardContainer />
                     </div>
                 </main>
