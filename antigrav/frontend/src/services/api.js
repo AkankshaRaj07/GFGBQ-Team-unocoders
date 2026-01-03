@@ -31,5 +31,25 @@ export const api = {
             console.error("Heart prediction error:", error);
             throw error;
         }
+    },
+
+    predictLiver: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/predict/liver`, data);
+            return response.data;
+        } catch (error) {
+            console.error("Liver prediction error:", error);
+            throw error;
+        }
+    },
+
+    predictMental: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/predict/mental-health`, data);
+            return response.data;
+        } catch (error) {
+            console.error("Mental health prediction error:", error);
+            throw error;
+        }
     }
 };

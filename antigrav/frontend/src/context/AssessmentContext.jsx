@@ -55,120 +55,144 @@ export const AssessmentProvider = ({ children }) => {
         thalassemia: 'normal' // normal, fixed, reversible
     });
 
+    // Liver Factors (New)
+    const [liverData, setLiverData] = useState({
+        Total_Bilirubin: 0.8,
+        Direct_Bilirubin: 0.2,
+        Alkaline_Phosphotase: 100,
+        Alamine_Aminotransferase: 30,
+        Aspartate_Aminotransferase: 25,
+        Total_Protiens: 7.0,
+        Albumin: 4.0,
+        Albumin_and_Globulin_Ratio: 1.0
+    });
+    const [skipLiver, setSkipLiver] = useState(false); // NEW: Skip logic
+
+    // Mental Health Factors (New)
+    const [mentalData, setMentalData] = useState({
+        stressLevel: 5, // 0-10
+        workload: 5,
+        sleepQuality: 7
+    });
+
     // Risk Calculation States
     const [isLoading, setIsLoading] = useState(false);
     const [diabetesRisk, setDiabetesRisk] = useState(0);
     const [heartRisk, setHeartRisk] = useState(0);
+    const [liverRisk, setLiverRisk] = useState(0); // New
+    const [mentalRisk, setMentalRisk] = useState(0); // New
     const [overallRisk, setOverallRisk] = useState(0);
     const [isVerified, setIsVerified] = useState(false);
-    const [debugLog, setDebugLog] = useState(null); // RAW DEBUG LOG
+    const [debugLog, setDebugLog] = useState(null);
 
     // -------------------------------------------------------------------------
     // REAL ML API INTEGRATION
     // -------------------------------------------------------------------------
 
+    const getRiskPredictions = async (dData, hData, lData, mData, uInfo) => {
+        // 1. Diabetes Payload
+        const diabetesPayload = {
+            Pregnancies: 0,
+            Glucose: parseFloat(dData.glucose) || 100,
+            BloodPressure: parseFloat(dData.bp) || 70,
+            SkinThickness: parseFloat(dData.skinThickness) || 20,
+            Insulin: parseFloat(dData.insulin) || 80,
+            BMI: parseFloat(dData.bmi) || 25,
+            DiabetesPedigreeFunction: dData.familyHistory ? 0.8 : 0.2,
+            Age: parseInt(uInfo.age) || 30
+        };
+
+        // 2. Heart Payload
+        const heartPayload = {
+            age: parseInt(uInfo.age) || 30,
+            sex: uInfo.sex === 'male' ? 1 : 0,
+            trestbps: parseFloat(hData.restingBP) || 120,
+            chol: parseFloat(hData.cholesterol) || 200,
+            fbs: 0,
+            thalach: parseFloat(hData.maxHeartRate) || 150,
+            exang: hData.exerciseAngina ? 1 : 0,
+            oldpeak: parseFloat(hData.oldpeak) || 0,
+            ca: hData.majorVessels,
+            cp: hData.chestPain === 'typical' ? '0' : hData.chestPain === 'atypical' ? '1' : hData.chestPain === 'non-anginal' ? '2' : '3',
+            slope: hData.slope === 'upsloping' ? '0' : hData.slope === 'flat' ? '1' : '2',
+            thal: hData.thalassemia === 'normal' ? '1' : hData.thalassemia === 'fixed' ? '2' : '3',
+            restecg: '0'
+        };
+
+        // 3. Liver Payload
+        const liverPayload = {
+            Age: parseInt(uInfo.age) || 30,
+            Gender: uInfo.sex === 'male' ? 'Male' : 'Female',
+            ...lData
+        };
+
+        // 4. Mental Health Payload
+        const mentalPayload = {
+            stress_level: parseInt(mData.stressLevel),
+            workload: parseInt(mData.workload),
+            sleep_quality: parseInt(mData.sleepQuality)
+        };
+
+        const [dRes, hRes, mRes] = await Promise.allSettled([
+            api.predictDiabetes(diabetesPayload),
+            api.predictHeart(heartPayload),
+            api.predictMental(mentalPayload)
+        ]);
+
+        let lScore = null;
+        if (!skipLiver) {
+            try {
+                const lRes = await api.predictLiver(liverPayload);
+                lScore = lRes.risk_score;
+            } catch (e) {
+                console.error("Liver prediction skipped/failed:", e);
+                lScore = null;
+            }
+        }
+
+        const dScore = dRes.status === 'fulfilled' ? dRes.value.risk_score : 20;
+        const hScore = hRes.status === 'fulfilled' ? hRes.value.risk_score : 15;
+        const mScore = mRes.status === 'fulfilled' ? mRes.value.risk_score : 25;
+
+        return {
+            dRisk: dScore || 0,
+            hRisk: hScore || 0,
+            lRisk: lScore, // Can be null
+            mRisk: mScore || 0
+        };
+    };
+
     const calculateRisk = async () => {
         setIsLoading(true);
-        // Default fallbacks in case of error
-        let dRisk = 0;
-        let hRisk = 0;
-        let dLevel = 'low';
-        let hLevel = 'low';
-
         try {
-            // 1. Prepare Diabetes Payload (Matches app.py input_data)
-            const diabetesPayload = {
-                Pregnancies: 0, // Not collected in wizard, default 0
-                Glucose: parseFloat(diabetesData.glucose) || 100,
-                BloodPressure: parseFloat(diabetesData.bp) || 70, // Corrected from diabetesData.bloodPressure
-                SkinThickness: parseFloat(diabetesData.skinThickness) || 20,
-                Insulin: parseFloat(diabetesData.insulin) || 80,
-                BMI: parseFloat(diabetesData.bmi) || 25,
-                DiabetesPedigreeFunction: diabetesData.familyHistory ? 0.8 : 0.2, // Logic: 0.8 if family history, 0.2 if not
-                Age: parseInt(userInfo.age) || 30
-            };
+            const { dRisk, hRisk, lRisk, mRisk } = await getRiskPredictions(diabetesData, heartData, liverData, mentalData, userInfo);
 
-            // 2. Prepare Heart Payload (Matches app.py input_base)
-            const heartPayload = {
-                age: parseInt(userInfo.age) || 30,
-                sex: userInfo.sex === 'male' ? 1 : 0,
-                trestbps: parseFloat(heartData.restingBP) || 120,
-                chol: parseFloat(heartData.cholesterol) || 200,
-                fbs: 0, // Not currently collected, default 0
-                thalach: parseFloat(heartData.maxHeartRate) || 150, // Corrected from heartData.maxHR
-                exang: heartData.exerciseAngina ? 1 : 0,
-                oldpeak: parseFloat(heartData.oldpeak) || 0,
-                ca: heartData.majorVessels, // Using majorVessels
+            setDiabetesRisk(dRisk);
+            setHeartRisk(hRisk);
+            setLiverRisk(lRisk);
+            setMentalRisk(mRisk);
 
-                // Categoricals (mapped to strings expected by backend)
-                cp: heartData.chestPain === 'typical' ? '0' :
-                    heartData.chestPain === 'atypical' ? '1' :
-                        heartData.chestPain === 'non-anginal' ? '2' :
-                            '3', // asymptomatic
-                slope: heartData.slope === 'upsloping' ? '0' :
-                    heartData.slope === 'flat' ? '1' :
-                        '2', // downsloping
-                thal: heartData.thalassemia === 'normal' ? '1' : // Backend expects 1 for normal, 2 for fixed, 3 for reversible
-                    heartData.thalassemia === 'fixed' ? '2' :
-                        '3', // reversible
-                restecg: '0' // Not currently collected, default 0
-            };
+            // Average Risk Calculation (Handle null liver)
+            const factors = [dRisk, hRisk, mRisk];
+            if (lRisk !== null) factors.push(lRisk);
+            const total = factors.reduce((a, b) => a + b, 0);
+            setOverallRisk(total / factors.length);
 
-            console.log("DEBUG: Sending Diabetes Payload:", diabetesPayload);
-            console.log("DEBUG: Sending Heart Payload:", heartPayload);
+            setIsVerified(true);
 
-            // 3. Parallel API Calls
-            const [dRes, hRes] = await Promise.allSettled([
-                api.predictDiabetes(diabetesPayload),
-                api.predictHeart(heartPayload)
-            ]);
-
-            console.log("DEBUG: API Responses:", { dRes, hRes });
-
-            // CAPTURE DEBUG LOG
-            const debugInfo = {
-                status: 'completed',
-                diabetes: dRes.status === 'fulfilled' ? dRes.value : dRes.reason,
-                heart: hRes.status === 'fulfilled' ? hRes.value : hRes.reason
-            };
+            const debugInfo = { dRisk, hRisk, lRisk, mRisk, timestamp: new Date().toISOString() };
             setDebugLog(JSON.stringify(debugInfo, null, 2));
-
-            // 4. Process Diabetes Result
-            if (dRes.status === 'fulfilled') {
-                console.log("DEBUG: Diabetes Data:", dRes.value);
-                dRisk = dRes.value.risk_score;
-                dLevel = dRes.value.risk_level.toLowerCase();
-                if (dRes.value.model_source) setIsVerified(true);
-            } else {
-                console.error("Diabetes API failed:", dRes.reason);
-                // Fallback Logic (Mock) - KEEPING MOCK FOR NOW BUT LOGGING ERROR
-                if (diabetesPayload.Glucose > 140) dRisk = 75;
-                else dRisk = 15;
-            }
-
-            // 5. Process Heart Result
-            if (hRes.status === 'fulfilled') {
-                hRisk = hRes.value.risk_score;
-                hLevel = hRes.value.risk_level.toLowerCase();
-            } else {
-                console.error("Heart API failed:", hRes.reason);
-                if (heartPayload.thalach > 180) hRisk = 65;
-                else hRisk = 10;
-            }
 
         } catch (err) {
             console.error("Global Risk Calculation Error:", err);
         }
-
-        setDiabetesRisk(dRisk);
-        setHeartRisk(hRisk);
-
-        // Simple composite
-        const avgRisk = (dRisk + hRisk) / 2;
-        setOverallRisk(avgRisk);
-
         setIsLoading(false);
-        setStep(4); // Move to results
+        setStep(6); // Moving to Dashboard (Step 6 now)
+    };
+
+    // New: Simulate Risk for "What-If" scenarios without changing main state
+    const simulateRisk = async (simDiabetesData, simHeartData) => {
+        return await getRiskPredictions(simDiabetesData, simHeartData, userInfo);
     };
 
     const nextStep = () => setStep(prev => prev + 1);
@@ -191,12 +215,19 @@ export const AssessmentProvider = ({ children }) => {
         isVerified,
         theme,
         toggleTheme,
-        debugLog
+        theme,
+        toggleTheme,
+        debugLog,
+        simulateRisk,
+        liverData, setLiverData,
+        mentalData, setMentalData,
+        liverRisk, mentalRisk,
+        skipLiver, setSkipLiver
     };
 
     return (
-        <AssessmentContext.Provider value={value}>
+        <AssessmentContext.Provider value={value} >
             {children}
-        </AssessmentContext.Provider>
+        </AssessmentContext.Provider >
     );
 };

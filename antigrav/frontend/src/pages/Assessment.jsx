@@ -3,6 +3,8 @@ import { AssessmentProvider, useAssessment } from '../context/AssessmentContext'
 import BasicInfoStep from '../components/Wizard/BasicInfoStep';
 import ClinicalVitalsStep from '../components/Wizard/ClinicalVitalsStep';
 import DetailedHistoryStep from '../components/Wizard/DetailedHistoryStep';
+import LiverStep from '../components/Wizard/LiverStep';
+import MentalHealthStep from '../components/Wizard/MentalHealthStep';
 import ResultsDashboard from '../components/ResultsDashboard';
 import CursorGlow from '../components/CursorGlow';
 import HealthChatbot from '../components/HealthChatbot';
@@ -27,8 +29,10 @@ const WizardContainer = () => {
         switch (renderStep) {
             case 1: return <BasicInfoStep />;
             case 2: return <ClinicalVitalsStep />;
-            case 3: return <DetailedHistoryStep />;
-            case 4: return <ResultsDashboard />;
+            case 3: return <LiverStep />;
+            case 4: return <MentalHealthStep />;
+            case 5: return <DetailedHistoryStep />;
+            case 6: return <ResultsDashboard />;
             default: return <ResultsDashboard />;
         }
     };
@@ -45,20 +49,22 @@ const Sidebar = () => {
     const steps = [
         { id: 1, label: 'Patient Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
         { id: 2, label: 'Clinical Vitals', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-        { id: 3, label: 'Medical History', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-        { id: 4, label: 'Risk Analysis', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
+        { id: 3, label: 'Liver Function', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
+        { id: 4, label: 'Mental Wellness', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { id: 5, label: 'History Review', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+        { id: 6, label: 'Risk Analysis', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
     ];
 
     return (
-        <div className="w-80 bg-[#FFFBF7] border-r border-stone-100 flex flex-col h-screen fixed left-0 top-0 z-50 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300 font-sans">
+        <div className="w-80 bg-[#FFFBF7] dark:bg-slate-900 border-r border-stone-100 dark:border-slate-800 flex flex-col h-screen fixed left-0 top-0 z-50 p-8 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300 font-sans">
             <div className="mb-16 flex items-center gap-3">
-                <div className="bg-stone-900 p-2.5 rounded-full shadow-lg shadow-stone-900/10">
-                    <svg className="w-5 h-5 text-[#FFFBF7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-stone-900 dark:bg-white p-2.5 rounded-full shadow-lg shadow-stone-900/10">
+                    <svg className="w-5 h-5 text-[#FFFBF7] dark:text-stone-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
                 <div>
-                    <h1 className="font-serif font-bold text-xl text-stone-900 tracking-tight leading-none">EarlyGuard</h1>
+                    <h1 className="font-serif font-bold text-xl text-stone-900 dark:text-white tracking-tight leading-none">EarlyGuard</h1>
                     <span className="text-[10px] font-bold tracking-[0.2em] text-stone-400 uppercase">Assessment</span>
                 </div>
             </div>
@@ -72,15 +78,15 @@ const Sidebar = () => {
                         <div
                             key={s.id}
                             className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300 ${isActive
-                                ? 'bg-rose-50 text-rose-900 shadow-sm border border-rose-100'
+                                ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-900 dark:text-rose-100 shadow-sm border border-rose-100 dark:border-rose-500/20'
                                 : isPast
-                                    ? 'text-stone-400 opacity-60' // Past steps
-                                    : 'text-stone-500 hover:bg-stone-50' // Future steps
+                                    ? 'text-stone-400 dark:text-slate-600 opacity-60'
+                                    : 'text-stone-500 dark:text-slate-400 hover:bg-stone-50 dark:hover:bg-slate-800'
                                 }`}
                         >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive
-                                ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
-                                : 'bg-white border border-stone-100 text-stone-300'
+                                ? 'bg-rose-500 text-white shadow-md shadow-rose-200 dark:shadow-rose-900/30'
+                                : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700 text-stone-300 dark:text-slate-500'
                                 }`}>
                                 {isActive ? (
                                     <span className="text-xs font-bold">{s.id}</span>
@@ -94,8 +100,28 @@ const Sidebar = () => {
                 })}
             </nav>
 
-            <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-                <h4 className="font-bold text-stone-800 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+            <div className="flex items-center justify-between mb-6 px-1">
+                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Theme</span>
+                <button
+                    onClick={toggleTheme}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-stone-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                    {theme === 'dark' ? (
+                        <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                            <span className="text-xs font-bold">Light</span>
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                            <span className="text-xs font-bold">Dark</span>
+                        </>
+                    )}
+                </button>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-stone-100 dark:border-slate-800 shadow-sm">
+                <h4 className="font-bold text-stone-800 dark:text-stone-200 text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     System Live
                 </h4>
@@ -113,12 +139,12 @@ const Assessment = () => {
             {/* Removed CursorGlow for cleaner look, can re-add if needed */}
             <HealthChatbot />
 
-            <div className="min-h-screen font-sans text-stone-800 bg-[#FFFBF7] selection:bg-rose-100 selection:text-rose-900 transition-colors duration-300">
+            <div className="min-h-screen font-sans text-stone-800 dark:text-stone-100 bg-[#FFFBF7] dark:bg-slate-900 selection:bg-rose-100 selection:text-rose-900 transition-colors duration-300">
                 <Sidebar />
                 <main className="ml-80 p-10 min-h-screen flex items-center justify-center relative">
-                    {/* Organic Background Blobs */}
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-200/20 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
-                    <div className="absolute bottom-0 left-80 w-[500px] h-[500px] bg-amber-100/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+                    {/* Organic Background Blobs - Adjusted for Dark Mode */}
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-200/20 dark:bg-rose-900/10 rounded-full blur-[120px] pointer-events-none mix-blend-multiply dark:mix-blend-normal"></div>
+                    <div className="absolute bottom-0 left-80 w-[500px] h-[500px] bg-amber-100/40 dark:bg-blue-900/10 rounded-full blur-[100px] pointer-events-none mix-blend-multiply dark:mix-blend-normal"></div>
 
                     <div className="w-full max-w-3xl relative z-10">
                         <WizardContainer />

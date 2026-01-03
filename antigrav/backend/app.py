@@ -8,43 +8,54 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Define model paths
+# Define model paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 DIABETES_MODEL_PATH = os.path.join(MODELS_DIR, 'diabetes_model.pkl')
 HEART_MODEL_PATH = os.path.join(MODELS_DIR, 'heart_model.pkl')
+LIVER_MODEL_PATH = os.path.join(MODELS_DIR, 'liver_model.pkl')
+MENTAL_MODEL_PATH = os.path.join(MODELS_DIR, 'mental_health_model.pkl')
 
-# Global variables to store loaded models
+# Global variables
 diabetes_model = None
 diabetes_scaler = None
 heart_model = None
 heart_scaler = None
 heart_features = None
+liver_data = None 
+mental_data = None
 
 def load_models():
-    global diabetes_model, diabetes_scaler, heart_model, heart_scaler, heart_features
+    global diabetes_model, diabetes_scaler, heart_model, heart_scaler, heart_features, liver_data, mental_data
     
     try:
-        # Load Diabetes Model (Tuple: model, scaler)
+        # Load Diabetes
         if os.path.exists(DIABETES_MODEL_PATH):
             diabetes_model, diabetes_scaler = joblib.load(DIABETES_MODEL_PATH)
-            print("Variable 'diabetes_model' loaded successfully.")
-        else:
-            print(f"Warning: Diabetes model not found at {DIABETES_MODEL_PATH}")
-
-        # Load Heart Model (Dict: {model, scaler, features})
+            print("Diabetes model loaded.")
+            
+        # Load Heart
         if os.path.exists(HEART_MODEL_PATH):
-            heart_data = joblib.load(HEART_MODEL_PATH)
-            heart_model = heart_data['model']
-            heart_scaler = heart_data['scaler']
-            heart_features = heart_data['features']
-            print("Variable 'heart_model' loaded successfully.")
-        else:
-            print(f"Warning: Heart model not found at {HEART_MODEL_PATH}")
+            heart_dict = joblib.load(HEART_MODEL_PATH)
+            heart_model = heart_dict['model']
+            heart_scaler = heart_dict['scaler']
+            heart_features = heart_dict['features']
+            print("Heart model loaded.")
+            
+        # Load Liver (New)
+        if os.path.exists(LIVER_MODEL_PATH):
+            liver_data = joblib.load(LIVER_MODEL_PATH)
+            print("Liver model loaded.")
+
+        # Load Mental Health (New)
+        if os.path.exists(MENTAL_MODEL_PATH):
+            mental_data = joblib.load(MENTAL_MODEL_PATH)
+            print("Mental Health model loaded.")
             
     except Exception as e:
         print(f"Error loading models: {str(e)}")
 
-# Load models on startup
+# Load on startup
 load_models()
 
 @app.route('/health', methods=['GET'])
@@ -53,9 +64,13 @@ def health_check():
         "status": "online",
         "models": {
             "diabetes": diabetes_model is not None,
-            "heart": heart_model is not None
+            "heart": heart_model is not None,
+            "liver": liver_data is not None,
+            "mental": mental_data is not None
         }
     })
+
+# ... (Existing Diabetes/Heart Routes) ...
 
 @app.route('/predict/diabetes', methods=['POST'])
 def predict_diabetes():
@@ -171,6 +186,82 @@ def predict_heart():
 
     except Exception as e:
         print(e)
+        return jsonify({"error": str(e)}), 400
+
+# NEW ROUTE: Liver
+@app.route('/predict/liver', methods=['POST'])
+def predict_liver():
+    if not liver_data: return jsonify({"error": "Liver model not loaded"}), 503
+    try:
+        data = request.json
+        # Inputs: Age, Gender, Total_Bilirubin, Direct_Bilirubin, Alkaline_Phosphotase, Alamine_Aminotransferase, Aspartate_Aminotransferase, Total_Protiens, Albumin, Albumin_and_Globulin_Ratio
+        
+        gender_code = 1 if data.get('Gender', 'Male') == 'Male' else 0
+        
+        features = [
+            float(data.get('Age', 0)),
+            gender_code,
+            float(data.get('Total_Bilirubin', 0)),
+            float(data.get('Direct_Bilirubin', 0)),
+            float(data.get('Alkaline_Phosphotase', 0)),
+            float(data.get('Alamine_Aminotransferase', 0)),
+            float(data.get('Aspartate_Aminotransferase', 0)),
+            float(data.get('Total_Protiens', 0)),
+            float(data.get('Albumin', 0)),
+            float(data.get('Albumin_and_Globulin_Ratio', 0))
+        ]
+        
+        scaled = liver_data['scaler'].transform([features])
+        prob = liver_data['model'].predict_proba(scaled)[0][1]
+        
+        level = "High" if prob > 0.7 else "Moderate" if prob > 0.4 else "Low"
+        explanation = "Enzyme levels significantly elevated." if prob > 0.7 else "Liver function appears stable."
+        
+        return jsonify({
+            "risk_score": round(prob * 100, 2),
+            "risk_level": level,
+            "explanation": explanation
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# NEW ROUTE: Mental Health
+@app.route('/predict/mental-health', methods=['POST'])
+def predict_mental():
+    if not mental_data: return jsonify({"error": "Mental Health model not loaded"}), 503
+    try:
+        data = request.json
+        # Inputs (0-10 Scale from UI): Stress, Workload, Sleep_Quality
+        
+        stress_input = float(data.get('stress_level', 5))
+        workload_input = float(data.get('workload', 5))
+        sleep_input = float(data.get('sleep_quality', 5))
+        
+        # Normalize to 0-1 (Model Expectation)
+        # Anxiety_Indicator, Workload_Indicator, Sleep_Indicator
+        features = [
+            stress_input / 10.0,
+            workload_input / 10.0,
+            sleep_input / 10.0
+        ]
+        
+        scaled = mental_data['scaler'].transform([features])
+        prob = mental_data['model'].predict_proba(scaled)[0][1]
+        
+        level = "High" if prob > 0.6 else "Moderate" if prob > 0.3 else "Low"
+        
+        suggestions = []
+        if stress_input > 7: suggestions.append("Practice regular mindfulness or meditation")
+        if workload_input > 7: suggestions.append("Discuss workload distribution with supervisors")
+        if sleep_input < 4: suggestions.append("Prioritize 7-8 hours of sleep")
+        
+        return jsonify({
+            "risk_score": round(prob * 100, 2),
+            "risk_level": level,
+            "explanation": "High stress markers detected." if prob > 0.6 else "Mental wellness indicators are balanced.",
+            "suggestions": suggestions
+        })
+    except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':

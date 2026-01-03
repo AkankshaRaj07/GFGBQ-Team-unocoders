@@ -1,61 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAssessment } from '../../context/AssessmentContext';
+import HealthUploader from './HealthUploader';
 
-const RangeSlider = ({ label, value, onChange, min, max, unit, icon, threshold = max }) => {
+// Updated RangeSlider (Same as before)
+import InfoTooltip from '../InfoTooltip';
+
+// Updated RangeSlider
+const RangeSlider = ({ label, value, onChange, min, max, unit, icon, normalRange, tooltipContent }) => {
     const percentage = ((value - min) / (max - min)) * 100;
-    // Determine color based on threshold (if value > threshold, it's warning/danger)
-    // Using a simple logic: Green for safe, Amber for elevated, Red for high
-    // We can allow threshold to be a number or an object { warning: x, danger: y }
+    const isNormal = value >= normalRange.min && value <= normalRange.max;
 
-    let colorClass = 'from-emerald-400 to-green-500'; // Default Green
-    let thumbClass = 'border-emerald-500';
-    let textClass = 'text-emerald-600 dark:text-emerald-400';
-    let bgClass = 'bg-emerald-50 dark:bg-emerald-900/30';
-
-    if (value > threshold) {
-        colorClass = 'from-rose-400 to-red-500';
-        thumbClass = 'border-rose-500';
-        textClass = 'text-rose-600 dark:text-rose-400';
-        bgClass = 'bg-rose-50 dark:bg-rose-900/30';
-    }
+    let colorClass = isNormal ? 'from-blue-400 to-indigo-500' : 'from-rose-400 to-red-500';
+    let bgClass = isNormal ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' : 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800';
+    let trackClass = isNormal ? 'bg-blue-100 dark:bg-blue-900/20' : 'bg-rose-100 dark:bg-rose-900/20';
+    let containerClass = isNormal ? 'border-blue-100 dark:border-blue-900/30' : 'border-rose-100 dark:border-rose-900/30 shadow-md ring-1 ring-rose-100 dark:ring-rose-800';
 
     return (
-        <div className="mb-6">
-            <div className="flex justify-between items-end mb-2">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <span className={`p-1.5 rounded-lg ${bgClass} ${textClass}`}>{icon}</span>
-                    {label}
+        <div className={`mb-6 p-4 rounded-2xl transition-all duration-300 border ${containerClass} dark:bg-slate-800/40`}>
+            <div className="flex justify-between items-end mb-3">
+                <label className="text-sm font-bold text-stone-700 dark:text-slate-300 flex items-center gap-2">
+                    <span className={`p-1.5 rounded-lg text-lg ${isNormal ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-rose-100 dark:bg-rose-900/40'}`}>{icon}</span>
+                    <div className="flex items-center gap-2">
+                        <span>{label}</span>
+                        <InfoTooltip
+                            title={label}
+                            content={tooltipContent}
+                            range={`${normalRange.min} - ${normalRange.max} ${unit}`}
+                            source="Clinical Guidelines"
+                        />
+                    </div>
                 </label>
-                <div className={`font-mono font-bold px-3 py-1 rounded-lg text-sm ${bgClass} ${textClass}`}>
-                    {value} <span className="text-xs text-slate-400 dark:text-slate-500 font-medium ml-0.5">{unit}</span>
+                <div className={`font-mono font-bold px-3 py-1.5 rounded-xl text-sm border ${bgClass}`}>
+                    {value} <span className="text-xs opacity-70 ml-0.5">{unit}</span>
                 </div>
             </div>
+
             <div className="relative h-6 flex items-center group">
-                {/* Track */}
-                <div className="absolute w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                        className={`h-full bg-gradient-to-r ${colorClass} transition-all duration-300 ease-out`}
-                        style={{ width: `${percentage}%` }}
-                    />
+                <div className={`absolute w-full h-2 rounded-full overflow-hidden ${trackClass}`}>
+                    <div className={`h-full bg-gradient-to-r ${colorClass} transition-all duration-300 ease-out`} style={{ width: `${percentage}%` }} />
                 </div>
-                {/* Thumb using standard range input */}
-                <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    value={value}
-                    onChange={onChange}
-                    className="absolute w-full h-full opacity-0 cursor-ew-resize z-10"
-                />
-                {/* Thumb Visual */}
-                <div
-                    className={`w-5 h-5 bg-white dark:bg-slate-800 border-2 ${thumbClass} rounded-full shadow-md absolute pointer-events-none transition-all duration-150 ease-out group-hover:scale-110`}
-                    style={{ left: `calc(${percentage}% - 10px)` }}
-                />
+                <input type="range" min={min} max={max} value={value} onChange={onChange} className="absolute w-full h-full opacity-0 cursor-ew-resize z-10" />
+                <div className={`w-6 h-6 bg-white dark:bg-slate-700 border-4 ${isNormal ? 'border-blue-500 dark:border-blue-400' : 'border-rose-500 dark:border-rose-400'} rounded-full shadow-md absolute pointer-events-none transition-all duration-150 ease-out group-hover:scale-110`} style={{ left: `calc(${percentage}% - 12px)` }} />
             </div>
-            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 px-1">
-                <span>{min}</span>
-                <span>{max}</span>
+
+            <div className="flex justify-between items-start mt-1 px-1">
+                <div className="flex gap-4 text-[10px] text-stone-400 dark:text-slate-600 font-medium">
+                    <span>{min}</span>
+                    <span>{max}</span>
+                </div>
+                {!isNormal && (
+                    <span className="text-[10px] font-bold text-rose-500 animate-pulse">
+                        ⚠️ Outside typical range
+                    </span>
+                )}
             </div>
         </div>
     );
@@ -63,6 +60,7 @@ const RangeSlider = ({ label, value, onChange, min, max, unit, icon, threshold =
 
 const ClinicalVitalsStep = () => {
     const { diabetesData, setDiabetesData, heartData, setHeartData, nextStep, prevStep } = useAssessment();
+    const [lifestyleBadge, setLifestyleBadge] = useState(null);
 
     const handleChange = (e, field, type) => {
         const val = e.target.value;
@@ -70,89 +68,60 @@ const ClinicalVitalsStep = () => {
         else setHeartData({ ...heartData, [field]: val });
     };
 
+    const handleExtractedData = (data) => {
+        // Direct Inputs
+        if (data.glucose) setDiabetesData(prev => ({ ...prev, glucose: data.glucose }));
+        if (data.maxHeartRate) setHeartData(prev => ({ ...prev, maxHeartRate: data.maxHeartRate }));
+
+        // Lifestyle Context (Steps/Sleep)
+        if (data.steps || data.sleep) {
+            setLifestyleBadge({
+                steps: data.steps,
+                sleep: data.sleep,
+                message: "Lifestyle data included in risk profile."
+            });
+        }
+    };
+
     return (
-        <div className="animate-fade-in-up">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Clinical Vitals</h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm">Use the sliders to input your current measurements.</p>
+        <div className="animate-fade-in-up max-w-3xl mx-auto">
+            <h2 className="font-serif text-4xl font-bold text-stone-900 dark:text-white mb-2">Check your Vitals.</h2>
+            <p className="text-lg text-stone-500 dark:text-slate-400 mb-8">Slide to adjust values or <span className="font-bold text-rose-500">upload a report</span>.</p>
 
-            <div className="grid md:grid-cols-2 gap-8 mb-8">
-                {/* Glucose */}
-                <RangeSlider
-                    label="Fasting Glucose"
-                    value={diabetesData.glucose}
-                    onChange={(e) => handleChange(e, 'glucose', 'diabetes')}
-                    min={50} max={300} unit="mg/dL"
-                    threshold={140} // High Glucose > 140
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>}
-                />
+            <HealthUploader onDataExtracted={handleExtractedData} />
 
-                {/* Blood Pressure */}
-                <RangeSlider
-                    label="Resting BP"
-                    value={diabetesData.bp}
-                    onChange={(e) => handleChange(e, 'bp', 'diabetes')} // Using diabetesData.bp as unified BP for now
-                    min={80} max={200} unit="mm Hg"
-                    threshold={130} // Hypertension > 130
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>}
-                />
+            {lifestyleBadge && (
+                <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl flex items-center justify-between animate-fade-in-up">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-lg">🏃</div>
+                        <div>
+                            <h5 className="font-bold text-emerald-900 dark:text-emerald-100 text-sm">Verified Lifestyle Data</h5>
+                            <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                                {lifestyleBadge.steps ? `${lifestyleBadge.steps} steps` : ''}
+                                {lifestyleBadge.steps && lifestyleBadge.sleep ? ' • ' : ''}
+                                {lifestyleBadge.sleep ? `${lifestyleBadge.sleep}hrs sleep` : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <span className="text-xs font-bold bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 px-2 py-1 rounded">Active</span>
+                </div>
+            )}
 
-                {/* Cholesterol */}
-                <RangeSlider
-                    label="Serum Cholesterol"
-                    value={heartData.cholesterol}
-                    onChange={(e) => handleChange(e, 'cholesterol', 'heart')}
-                    min={100} max={500} unit="mg/dL"
-                    threshold={200} // High Cholesterol > 200
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-                />
-
-                {/* Max Heart Rate */}
-                <RangeSlider
-                    label="Max Heart Rate"
-                    value={heartData.maxHeartRate}
-                    onChange={(e) => handleChange(e, 'maxHeartRate', 'heart')}
-                    min={60} max={220} unit="bpm"
-                    threshold={180} // Example threshold
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                />
-
-                {/* Insulin */}
-                <RangeSlider
-                    label="Insulin Level"
-                    value={diabetesData.insulin}
-                    onChange={(e) => handleChange(e, 'insulin', 'diabetes')}
-                    min={0} max={600} unit="mu U/ml"
-                    threshold={150} // High Insulin > 150 (roughly)
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>}
-                />
-
-                {/* BMI */}
-                <RangeSlider
-                    label="BMI"
-                    value={diabetesData.bmi}
-                    onChange={(e) => handleChange(e, 'bmi', 'diabetes')}
-                    min={10} max={60} unit="kg/m²"
-                    threshold={25} // Overweight > 25
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-                />
-            </div>
-
-            <div className="flex justify-between mt-10">
-                <button
-                    onClick={prevStep}
-                    className="text-slate-500 dark:text-slate-400 font-bold hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-                >
-                    Back
-                </button>
-                <button
-                    onClick={nextStep}
-                    className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                    Next Step
-                </button>
+            <div className="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(231,229,228,0.5)] dark:shadow-none border border-stone-100 dark:border-slate-700 space-y-2 relative transition-colors">
+                <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                    <RangeSlider label="Fasting Glucose" value={diabetesData.glucose} onChange={(e) => handleChange(e, 'glucose', 'diabetes')} min={50} max={300} unit="mg/dL" normalRange={{ min: 70, max: 99 }} icon="🍭" tooltipContent="Blood sugar level after 8 hours of fasting. Key indicator for diabetes." />
+                    <RangeSlider label="Resting BP" value={diabetesData.bp} onChange={(e) => handleChange(e, 'bp', 'diabetes')} min={80} max={200} unit="mm Hg" normalRange={{ min: 90, max: 120 }} icon="🩸" tooltipContent="Pressure in arteries when heart rests between beats. High values strain the heart." />
+                    <RangeSlider label="Serum Cholesterol" value={heartData.cholesterol} onChange={(e) => handleChange(e, 'cholesterol', 'heart')} min={100} max={500} unit="mg/dL" normalRange={{ min: 100, max: 199 }} icon="🍟" tooltipContent="Total amount of cholesterol in blood. High levels can lead to clogged arteries." />
+                    <RangeSlider label="Max Heart Rate" value={heartData.maxHeartRate} onChange={(e) => handleChange(e, 'maxHeartRate', 'heart')} min={60} max={220} unit="bpm" normalRange={{ min: 100, max: 190 }} icon="❤️" tooltipContent="Highest heart rate achieved during maximum physical exertion." />
+                    <RangeSlider label="Insulin Level" value={diabetesData.insulin} onChange={(e) => handleChange(e, 'insulin', 'diabetes')} min={0} max={600} unit="mu U/ml" normalRange={{ min: 3, max: 25 }} icon="💉" tooltipContent="Hormone that regulates blood sugar. High levels may indicate insulin resistance." />
+                    <RangeSlider label="BMI" value={diabetesData.bmi} onChange={(e) => handleChange(e, 'bmi', 'diabetes')} min={10} max={60} unit="kg/m²" normalRange={{ min: 18.5, max: 24.9 }} icon="⚖️" tooltipContent="Body Mass Index. Measure of body fat based on height and weight." />
+                </div>
+                <div className="flex justify-between mt-10 pt-6 border-t border-stone-100 dark:border-slate-700">
+                    <button onClick={prevStep} className="text-stone-500 dark:text-slate-400 font-bold hover:text-stone-800 dark:hover:text-slate-200 px-6 py-3 transition-colors">Back</button>
+                    <button onClick={nextStep} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-8 py-3 rounded-xl font-bold hover:bg-stone-800 dark:hover:bg-slate-200 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-stone-300 dark:shadow-slate-900/20">Detailed History →</button>
+                </div>
             </div>
         </div>
     );
 };
-
 export default ClinicalVitalsStep;
