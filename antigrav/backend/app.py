@@ -7,7 +7,6 @@ from recommendations import generate_recommendations
 
 # ------------------ APP CONFIG ------------------
 
-# Serve React build (frontend/dist)
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIST = os.path.join(BASE_PATH, "..", "frontend", "dist")
 
@@ -200,6 +199,12 @@ def predict_mental():
 @app.route("/predict/recommendations", methods=["POST"])
 def recommendations():
     return jsonify(generate_recommendations(request.json))
+
+# ------------------ HOME REDIRECT (SAFE ADDITION) ------------------
+
+@app.route("/home")
+def home():
+    return app.send_static_file("index.html")
 
 # ------------------ REACT ROUTING ------------------
 
