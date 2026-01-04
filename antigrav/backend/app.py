@@ -3,7 +3,7 @@ from flask_cors import CORS
 import pandas as pd
 import joblib
 import os
-from backend.recommendations import generate_recommendations
+from recommendations import generate_recommendations
 
 # ------------------ APP CONFIG ------------------
 
