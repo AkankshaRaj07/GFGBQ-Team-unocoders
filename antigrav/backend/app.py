@@ -5,66 +5,65 @@ import joblib
 import os
 from recommendations import generate_recommendations
 
+# ------------------ APP CONFIG ------------------
 
-# Production Configuration: Serve React Build
-# Assumes 'frontend/dist' exists relative to this file
-frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')
-app = Flask(__name__, static_folder=frontend_dist, static_url_path='/')
-CORS(app)  # Enable CORS for all routes
+# Serve React build (frontend/dist)
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIST = os.path.join(BASE_PATH, "..", "frontend", "dist")
 
-# Define model paths
-# Define model paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
-DIABETES_MODEL_PATH = os.path.join(MODELS_DIR, 'diabetes_model.pkl')
-HEART_MODEL_PATH = os.path.join(MODELS_DIR, 'heart_model.pkl')
-LIVER_MODEL_PATH = os.path.join(MODELS_DIR, 'liver_model.pkl')
-MENTAL_MODEL_PATH = os.path.join(MODELS_DIR, 'mental_health_model.pkl')
+app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path="/")
+CORS(app)
 
-# Global variables
-diabetes_model = None
-diabetes_scaler = None
-heart_model = None
-heart_scaler = None
-heart_features = None
-liver_data = None 
+# ------------------ MODEL PATHS ------------------
+
+MODELS_DIR = os.path.join(BASE_PATH, "models")
+
+DIABETES_MODEL_PATH = os.path.join(MODELS_DIR, "diabetes_model.pkl")
+HEART_MODEL_PATH = os.path.join(MODELS_DIR, "heart_model.pkl")
+LIVER_MODEL_PATH = os.path.join(MODELS_DIR, "liver_model.pkl")
+MENTAL_MODEL_PATH = os.path.join(MODELS_DIR, "mental_health_model.pkl")
+
+# ------------------ GLOBAL MODELS ------------------
+
+diabetes_model = diabetes_scaler = None
+heart_model = heart_scaler = heart_features = None
+liver_data = None
 mental_data = None
 
+# ------------------ LOAD MODELS ------------------
+
 def load_models():
-    global diabetes_model, diabetes_scaler, heart_model, heart_scaler, heart_features, liver_data, mental_data
-    
+    global diabetes_model, diabetes_scaler
+    global heart_model, heart_scaler, heart_features
+    global liver_data, mental_data
+
     try:
-        # Load Diabetes
         if os.path.exists(DIABETES_MODEL_PATH):
             diabetes_model, diabetes_scaler = joblib.load(DIABETES_MODEL_PATH)
-            print("Diabetes model loaded.")
-            
-        # Load Heart
+
         if os.path.exists(HEART_MODEL_PATH):
-            heart_dict = joblib.load(HEART_MODEL_PATH)
-            heart_model = heart_dict['model']
-            heart_scaler = heart_dict['scaler']
-            heart_features = heart_dict['features']
-            print("Heart model loaded.")
-            
-        # Load Liver (New)
+            heart_bundle = joblib.load(HEART_MODEL_PATH)
+            heart_model = heart_bundle["model"]
+            heart_scaler = heart_bundle["scaler"]
+            heart_features = heart_bundle["features"]
+
         if os.path.exists(LIVER_MODEL_PATH):
             liver_data = joblib.load(LIVER_MODEL_PATH)
-            print("Liver model loaded.")
 
-        # Load Mental Health (New)
         if os.path.exists(MENTAL_MODEL_PATH):
             mental_data = joblib.load(MENTAL_MODEL_PATH)
-            print("Mental Health model loaded.")
-            
-    except Exception as e:
-        print(f"Error loading models: {str(e)}")
 
-# Load on startup
+        print("All available models loaded successfully.")
+
+    except Exception as e:
+        print(f"Model loading error: {e}")
+
 load_models()
 
-@app.route('/health', methods=['GET'])
-def health_check():
+# ------------------ HEALTH CHECK ------------------
+
+@app.route("/health", methods=["GET"])
+def health():
     return jsonify({
         "status": "online",
         "models": {
@@ -75,223 +74,139 @@ def health_check():
         }
     })
 
-# ... (Existing Diabetes/Heart Routes) ...
+# ------------------ DIABETES ------------------
 
-@app.route('/predict/diabetes', methods=['POST'])
+@app.route("/predict/diabetes", methods=["POST"])
 def predict_diabetes():
-    if not diabetes_model or not diabetes_scaler:
-        return jsonify({"error": "Diabetes model not initialized"}), 503
-    
-    try:
-        data = request.json
-        print(f"DEBUG_DIABETES_INPUT: {data}")
-        # Expected keys matching training: Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age
-        
-        # Create DataFrame for single row
-        input_data = {
-            'Pregnancies': [float(data.get('Pregnancies', 0))],
-            'Glucose': [float(data.get('Glucose', 0))],
-            'BloodPressure': [float(data.get('BloodPressure', 0))],
-            'SkinThickness': [float(data.get('SkinThickness', 0))],
-            'Insulin': [float(data.get('Insulin', 0))],
-            'BMI': [float(data.get('BMI', 0))],
-            'DiabetesPedigreeFunction': [float(data.get('DiabetesPedigreeFunction', 0.5))], # Default average
-            'Age': [float(data.get('Age', 0))]
-        }
-        
-        df = pd.DataFrame(input_data)
-        
-        # Scale features
-        scaled_features = diabetes_scaler.transform(df)
-        
-        # Predict probability
-        probability = diabetes_model.predict_proba(scaled_features)[0][1]
-        
-        return jsonify({
-            "risk_score": round(probability * 100, 2),
-            "risk_level": "High" if probability > 0.6 else "Moderate" if probability > 0.3 else "Low",
-            "model_source": "Python ML (Scikit-Learn)"
-        })
+    if not diabetes_model:
+        return jsonify({"error": "Diabetes model not loaded"}), 503
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    data = request.json
 
-@app.route('/predict/heart', methods=['POST'])
+    df = pd.DataFrame([{
+        "Pregnancies": float(data.get("Pregnancies", 0)),
+        "Glucose": float(data.get("Glucose", 0)),
+        "BloodPressure": float(data.get("BloodPressure", 0)),
+        "SkinThickness": float(data.get("SkinThickness", 0)),
+        "Insulin": float(data.get("Insulin", 0)),
+        "BMI": float(data.get("BMI", 0)),
+        "DiabetesPedigreeFunction": float(data.get("DiabetesPedigreeFunction", 0.5)),
+        "Age": float(data.get("Age", 0))
+    }])
+
+    scaled = diabetes_scaler.transform(df)
+    prob = diabetes_model.predict_proba(scaled)[0][1]
+
+    return jsonify({
+        "risk_score": round(prob * 100, 2),
+        "risk_level": "High" if prob > 0.6 else "Moderate" if prob > 0.3 else "Low"
+    })
+
+# ------------------ HEART ------------------
+
+@app.route("/predict/heart", methods=["POST"])
 def predict_heart():
-    if not heart_model or not heart_scaler:
-        return jsonify({"error": "Heart model not initialized"}), 503
+    if not heart_model:
+        return jsonify({"error": "Heart model not loaded"}), 503
 
-    try:
-        data = request.json
-        print(f"DEBUG_HEART_INPUT: {data}")
-        # Core inputs from UI
-        # age, sex, chest_pain_type, resting_bp, cholesterol, fasting_bs, resting_ecg, max_hr, exercise_angina, oldpeak, st_slope
-        
-        # We need to reconstruct the dataframe to match training features exactly (One-Hot Encoded)
-        # 1. Create a base dict with numeric values
-        input_base = {
-            'age': float(data.get('age', 0)),
-            'sex': int(data.get('sex', 0)), # 1=Male, 0=Female
-            'trestbps': float(data.get('trestbps', 120)),
-            'chol': float(data.get('chol', 200)),
-            'fbs': int(data.get('fbs', 0)), # 1 if > 120
-            'thalach': float(data.get('thalach', 150)),
-            'exang': int(data.get('exang', 0)),
-            'oldpeak': float(data.get('oldpeak', 0)),
-            'ca': float(data.get('ca', 0))
-        }
+    data = request.json
+    df = pd.DataFrame(0, index=[0], columns=heart_features)
 
-        # 2. Handle Categoricals via manual One-Hot Mapping matches Training Columns
-        # Categories: cp (0-3), restecg (0-2), slope (0-2), thal (0-3)
-        # Training likely did: cp_1, cp_2, cp_3 (dropping first?) or just cp_1.. etc.
-        # We'll use a safer approach: Create a DF with 0s for all expected features, then fill.
+    numeric_map = {
+        "age": data.get("age", 0),
+        "sex": data.get("sex", 0),
+        "trestbps": data.get("trestbps", 120),
+        "chol": data.get("chol", 200),
+        "fbs": data.get("fbs", 0),
+        "thalach": data.get("thalach", 150),
+        "exang": data.get("exang", 0),
+        "oldpeak": data.get("oldpeak", 0),
+        "ca": data.get("ca", 0)
+    }
 
-        # Create DataFrame with all 0s
-        df = pd.DataFrame(0, index=[0], columns=heart_features)
-        
-        # Fill numeric
-        for col, val in input_base.items():
-            if col in df.columns:
-                df[col] = val
-        
-        # Set categorical dummies manually based on input strings/values
-        # Chest Pain: cp
-        # Assumption: Training used pd.get_dummies(drop_first=True)
-        cp_val = str(data.get('cp', '0')) # expected values like '1', '2', '3' (Typical, Atypical, Non-anginal) or descriptors
-        # Map back to dummy column names like 'cp_1', 'cp_2', etc. if they exist
-        if f"cp_{cp_val}" in df.columns:
-            df[f"cp_{cp_val}"] = 1
-            
-        # Slope
-        slope_val = str(data.get('slope', '1'))
-        if f"slope_{slope_val}" in df.columns:
-            df[f"slope_{slope_val}"] = 1
-            
-        # Thal
-        thal_val = str(data.get('thal', '2'))
-        if f"thal_{thal_val}" in df.columns:
-            df[f"thal_{thal_val}"] = 1
+    for k, v in numeric_map.items():
+        if k in df.columns:
+            df[k] = float(v)
 
-        # RestECG
-        restecg_val = str(data.get('restecg', '0'))
-        if f"restecg_{restecg_val}" in df.columns:
-            df[f"restecg_{restecg_val}"] = 1
+    for cat in ["cp", "slope", "thal", "restecg"]:
+        key = f"{cat}_{data.get(cat)}"
+        if key in df.columns:
+            df[key] = 1
 
-        # Scale
-        scaled_features = heart_scaler.transform(df)
-        
-        # Predict
-        probability = heart_model.predict_proba(scaled_features)[0][1]
-        
-        return jsonify({
-            "risk_score": round(probability * 100, 2),
-            "risk_level": "High" if probability > 0.6 else "Moderate" if probability > 0.3 else "Low",
-            "model_source": "Python ML (Scikit-Learn)"
-        })
+    scaled = heart_scaler.transform(df)
+    prob = heart_model.predict_proba(scaled)[0][1]
 
-    except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)}), 400
+    return jsonify({
+        "risk_score": round(prob * 100, 2),
+        "risk_level": "High" if prob > 0.6 else "Moderate" if prob > 0.3 else "Low"
+    })
 
-# NEW ROUTE: Liver
-@app.route('/predict/liver', methods=['POST'])
+# ------------------ LIVER ------------------
+
+@app.route("/predict/liver", methods=["POST"])
 def predict_liver():
-    if not liver_data: return jsonify({"error": "Liver model not loaded"}), 503
-    try:
-        data = request.json
-        # Inputs: Age, Gender, Total_Bilirubin, Direct_Bilirubin, Alkaline_Phosphotase, Alamine_Aminotransferase, Aspartate_Aminotransferase, Total_Protiens, Albumin, Albumin_and_Globulin_Ratio
-        
-        gender_code = 1 if data.get('Gender', 'Male') == 'Male' else 0
-        
-        features = [
-            float(data.get('Age', 0)),
-            gender_code,
-            float(data.get('Total_Bilirubin', 0)),
-            float(data.get('Direct_Bilirubin', 0)),
-            float(data.get('Alkaline_Phosphotase', 0)),
-            float(data.get('Alamine_Aminotransferase', 0)),
-            float(data.get('Aspartate_Aminotransferase', 0)),
-            float(data.get('Total_Protiens', 0)),
-            float(data.get('Albumin', 0)),
-            float(data.get('Albumin_and_Globulin_Ratio', 0))
-        ]
-        
-        scaled = liver_data['scaler'].transform([features])
-        prob = liver_data['model'].predict_proba(scaled)[0][1]
-        
-        level = "High" if prob > 0.7 else "Moderate" if prob > 0.4 else "Low"
-        explanation = "Enzyme levels significantly elevated." if prob > 0.7 else "Liver function appears stable."
-        
-        return jsonify({
-            "risk_score": round(prob * 100, 2),
-            "risk_level": level,
-            "explanation": explanation
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if not liver_data:
+        return jsonify({"error": "Liver model not loaded"}), 503
 
-# NEW ROUTE: Mental Health
-@app.route('/predict/mental-health', methods=['POST'])
+    data = request.json
+    gender = 1 if data.get("Gender") == "Male" else 0
+
+    features = [[
+        float(data.get("Age", 0)),
+        gender,
+        float(data.get("Total_Bilirubin", 0)),
+        float(data.get("Direct_Bilirubin", 0)),
+        float(data.get("Alkaline_Phosphotase", 0)),
+        float(data.get("Alamine_Aminotransferase", 0)),
+        float(data.get("Aspartate_Aminotransferase", 0)),
+        float(data.get("Total_Protiens", 0)),
+        float(data.get("Albumin", 0)),
+        float(data.get("Albumin_and_Globulin_Ratio", 0))
+    ]]
+
+    scaled = liver_data["scaler"].transform(features)
+    prob = liver_data["model"].predict_proba(scaled)[0][1]
+
+    return jsonify({
+        "risk_score": round(prob * 100, 2),
+        "risk_level": "High" if prob > 0.7 else "Moderate" if prob > 0.4 else "Low"
+    })
+
+# ------------------ MENTAL HEALTH ------------------
+
+@app.route("/predict/mental-health", methods=["POST"])
 def predict_mental():
-    if not mental_data: return jsonify({"error": "Mental Health model not loaded"}), 503
-    try:
-        data = request.json
-        # Inputs (0-10 Scale from UI): Stress, Workload, Sleep_Quality
-        
-        stress_input = float(data.get('stress_level', 5))
-        workload_input = float(data.get('workload', 5))
-        sleep_input = float(data.get('sleep_quality', 5))
-        
-        # Normalize to 0-1 (Model Expectation)
-        # Anxiety_Indicator, Workload_Indicator, Sleep_Indicator
-        features = [
-            stress_input / 10.0,
-            workload_input / 10.0,
-            sleep_input / 10.0
-        ]
-        
-        scaled = mental_data['scaler'].transform([features])
-        prob = mental_data['model'].predict_proba(scaled)[0][1]
-        
-        level = "High" if prob > 0.6 else "Moderate" if prob > 0.3 else "Low"
-        
-        suggestions = []
-        if stress_input > 7: suggestions.append("Practice regular mindfulness or meditation")
-        if workload_input > 7: suggestions.append("Discuss workload distribution with supervisors")
-        if sleep_input < 4: suggestions.append("Prioritize 7-8 hours of sleep")
-        
-        return jsonify({
-            "risk_score": round(prob * 100, 2),
-            "risk_level": level,
-            "explanation": "High stress markers detected." if prob > 0.6 else "Mental wellness indicators are balanced.",
-            "suggestions": suggestions
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if not mental_data:
+        return jsonify({"error": "Mental model not loaded"}), 503
 
+    data = request.json
 
+    features = [[
+        float(data.get("stress_level", 5)) / 10,
+        float(data.get("workload", 5)) / 10,
+        float(data.get("sleep_quality", 5)) / 10
+    ]]
 
-# NEW ROUTE: Recommendations
-@app.route('/predict/recommendations', methods=['POST'])
-def predict_recommendations():
-    try:
-        data = request.json
-        # Expecting full user data object
-        recs = generate_recommendations(data)
-        return jsonify(recs)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    scaled = mental_data["scaler"].transform(features)
+    prob = mental_data["model"].predict_proba(scaled)[0][1]
 
-# Serve React App
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    return jsonify({
+        "risk_score": round(prob * 100, 2),
+        "risk_level": "High" if prob > 0.6 else "Moderate" if prob > 0.3 else "Low"
+    })
+
+# ------------------ RECOMMENDATIONS ------------------
+
+@app.route("/predict/recommendations", methods=["POST"])
+def recommendations():
+    return jsonify(generate_recommendations(request.json))
+
+# ------------------ REACT ROUTING ------------------
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    file_path = os.path.join(app.static_folder, path)
+    if path and os.path.exists(file_path):
         return app.send_static_file(path)
-    else:
-        return app.send_static_file('index.html')
-
-if __name__ == '__main__':
-    print("Starting Flask Server on port 5000...")
-    app.run(port=5000, debug=True)
-
+    return app.send_static_file("index.html")
