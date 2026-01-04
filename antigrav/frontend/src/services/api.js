@@ -51,5 +51,15 @@ export const api = {
             console.error("Mental health prediction error:", error);
             throw error;
         }
+    },
+
+    getRecommendations: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/predict/recommendations`, data);
+            return response.data;
+        } catch (error) {
+            console.error("Recommendation error:", error);
+            return null;
+        }
     }
 };

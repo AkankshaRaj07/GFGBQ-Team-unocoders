@@ -1,0 +1,9 @@
+@echo off
+echo Starting EarlyGuard Production Server...
+cd /d "%~dp0\backend"
+echo Installing dependencies...
+pip install -r requirements.txt
+echo.
+echo Launching Server...
+python wsgi.py
+pause

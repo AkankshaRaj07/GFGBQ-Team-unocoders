@@ -84,6 +84,7 @@ export const AssessmentProvider = ({ children }) => {
     const [overallRisk, setOverallRisk] = useState(0);
     const [isVerified, setIsVerified] = useState(false);
     const [debugLog, setDebugLog] = useState(null);
+    const [recommendations, setRecommendations] = useState(null); // New state
 
     // -------------------------------------------------------------------------
     // REAL ML API INTEGRATION
@@ -119,12 +120,13 @@ export const AssessmentProvider = ({ children }) => {
             restecg: '0'
         };
 
-        // 3. Liver Payload
+        // 3. Liver Payload (Handle empty lData for simulation)
         const liverPayload = {
             Age: parseInt(uInfo.age) || 30,
             Gender: uInfo.sex === 'male' ? 'Male' : 'Female',
             ...lData
         };
+        const hasLiverData = Object.keys(lData).length > 0; // Check if real data exists
 
         // 4. Mental Health Payload
         const mentalPayload = {
@@ -140,7 +142,7 @@ export const AssessmentProvider = ({ children }) => {
         ]);
 
         let lScore = null;
-        if (!skipLiver) {
+        if (!skipLiver && hasLiverData) {
             try {
                 const lRes = await api.predictLiver(liverPayload);
                 lScore = lRes.risk_score;
@@ -178,6 +180,16 @@ export const AssessmentProvider = ({ children }) => {
             const total = factors.reduce((a, b) => a + b, 0);
             setOverallRisk(total / factors.length);
 
+            // Fetch personalized recommendations
+            const recPayload = {
+                diabetes: { ...diabetesData },
+                heart: { ...heartData },
+                liver: { ...liverData },
+                mental: { ...mentalData, stress_level: mentalData.stressLevel, sleep_quality: mentalData.sleepQuality }
+            };
+            const recs = await api.getRecommendations(recPayload);
+            setRecommendations(recs);
+
             setIsVerified(true);
 
             const debugInfo = { dRisk, hRisk, lRisk, mRisk, timestamp: new Date().toISOString() };
@@ -190,9 +202,9 @@ export const AssessmentProvider = ({ children }) => {
         setStep(6); // Moving to Dashboard (Step 6 now)
     };
 
-    // New: Simulate Risk for "What-If" scenarios without changing main state
     const simulateRisk = async (simDiabetesData, simHeartData) => {
-        return await getRiskPredictions(simDiabetesData, simHeartData, userInfo);
+        // Pass empty liver data (not simulated) and current mental data
+        return await getRiskPredictions(simDiabetesData, simHeartData, {}, mentalData, userInfo);
     };
 
     const nextStep = () => setStep(prev => prev + 1);
@@ -222,7 +234,8 @@ export const AssessmentProvider = ({ children }) => {
         liverData, setLiverData,
         mentalData, setMentalData,
         liverRisk, mentalRisk,
-        skipLiver, setSkipLiver
+        skipLiver, setSkipLiver,
+        recommendations // Export new state
     };
 
     return (

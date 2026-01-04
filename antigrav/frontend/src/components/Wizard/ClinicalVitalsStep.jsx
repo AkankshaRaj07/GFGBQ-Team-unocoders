@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAssessment } from '../../context/AssessmentContext';
-import HealthUploader from './HealthUploader';
+
+
 
 // Updated RangeSlider (Same as before)
 import InfoTooltip from '../InfoTooltip';
 
 // Updated RangeSlider
-const RangeSlider = ({ label, value, onChange, min, max, unit, icon, normalRange, tooltipContent }) => {
+const RangeSlider = ({ label, value, onChange, min, max, unit, icon, normalRange, tooltipContent, testName, location }) => {
     const percentage = ((value - min) / (max - min)) * 100;
     const isNormal = value >= normalRange.min && value <= normalRange.max;
 
@@ -27,6 +28,8 @@ const RangeSlider = ({ label, value, onChange, min, max, unit, icon, normalRange
                             content={tooltipContent}
                             range={`${normalRange.min} - ${normalRange.max} ${unit}`}
                             source="Clinical Guidelines"
+                            testName={testName}
+                            location={location}
                         />
                     </div>
                 </label>
@@ -68,53 +71,83 @@ const ClinicalVitalsStep = () => {
         else setHeartData({ ...heartData, [field]: val });
     };
 
-    const handleExtractedData = (data) => {
-        // Direct Inputs
-        if (data.glucose) setDiabetesData(prev => ({ ...prev, glucose: data.glucose }));
-        if (data.maxHeartRate) setHeartData(prev => ({ ...prev, maxHeartRate: data.maxHeartRate }));
 
-        // Lifestyle Context (Steps/Sleep)
-        if (data.steps || data.sleep) {
-            setLifestyleBadge({
-                steps: data.steps,
-                sleep: data.sleep,
-                message: "Lifestyle data included in risk profile."
-            });
-        }
-    };
 
     return (
         <div className="animate-fade-in-up max-w-3xl mx-auto">
             <h2 className="font-serif text-4xl font-bold text-stone-900 dark:text-white mb-2">Check your Vitals.</h2>
-            <p className="text-lg text-stone-500 dark:text-slate-400 mb-8">Slide to adjust values or <span className="font-bold text-rose-500">upload a report</span>.</p>
+            <p className="text-lg text-stone-500 dark:text-slate-400 mb-8">Enter your values below.</p>
 
-            <HealthUploader onDataExtracted={handleExtractedData} />
 
-            {lifestyleBadge && (
-                <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl flex items-center justify-between animate-fade-in-up">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-lg">🏃</div>
-                        <div>
-                            <h5 className="font-bold text-emerald-900 dark:text-emerald-100 text-sm">Verified Lifestyle Data</h5>
-                            <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                                {lifestyleBadge.steps ? `${lifestyleBadge.steps} steps` : ''}
-                                {lifestyleBadge.steps && lifestyleBadge.sleep ? ' • ' : ''}
-                                {lifestyleBadge.sleep ? `${lifestyleBadge.sleep}hrs sleep` : ''}
-                            </p>
-                        </div>
-                    </div>
-                    <span className="text-xs font-bold bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 px-2 py-1 rounded">Active</span>
-                </div>
-            )}
 
             <div className="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(231,229,228,0.5)] dark:shadow-none border border-stone-100 dark:border-slate-700 space-y-2 relative transition-colors">
                 <div className="grid md:grid-cols-2 gap-8 relative z-10">
-                    <RangeSlider label="Fasting Glucose" value={diabetesData.glucose} onChange={(e) => handleChange(e, 'glucose', 'diabetes')} min={50} max={300} unit="mg/dL" normalRange={{ min: 70, max: 99 }} icon="🍭" tooltipContent="Blood sugar level after 8 hours of fasting. Key indicator for diabetes." />
-                    <RangeSlider label="Resting BP" value={diabetesData.bp} onChange={(e) => handleChange(e, 'bp', 'diabetes')} min={80} max={200} unit="mm Hg" normalRange={{ min: 90, max: 120 }} icon="🩸" tooltipContent="Pressure in arteries when heart rests between beats. High values strain the heart." />
-                    <RangeSlider label="Serum Cholesterol" value={heartData.cholesterol} onChange={(e) => handleChange(e, 'cholesterol', 'heart')} min={100} max={500} unit="mg/dL" normalRange={{ min: 100, max: 199 }} icon="🍟" tooltipContent="Total amount of cholesterol in blood. High levels can lead to clogged arteries." />
-                    <RangeSlider label="Max Heart Rate" value={heartData.maxHeartRate} onChange={(e) => handleChange(e, 'maxHeartRate', 'heart')} min={60} max={220} unit="bpm" normalRange={{ min: 100, max: 190 }} icon="❤️" tooltipContent="Highest heart rate achieved during maximum physical exertion." />
-                    <RangeSlider label="Insulin Level" value={diabetesData.insulin} onChange={(e) => handleChange(e, 'insulin', 'diabetes')} min={0} max={600} unit="mu U/ml" normalRange={{ min: 3, max: 25 }} icon="💉" tooltipContent="Hormone that regulates blood sugar. High levels may indicate insulin resistance." />
-                    <RangeSlider label="BMI" value={diabetesData.bmi} onChange={(e) => handleChange(e, 'bmi', 'diabetes')} min={10} max={60} unit="kg/m²" normalRange={{ min: 18.5, max: 24.9 }} icon="⚖️" tooltipContent="Body Mass Index. Measure of body fat based on height and weight." />
+                    <RangeSlider
+                        label="Fasting Glucose"
+                        value={diabetesData.glucose}
+                        onChange={(e) => handleChange(e, 'glucose', 'diabetes')}
+                        min={50} max={300} unit="mg/dL"
+                        normalRange={{ min: 70, max: 99 }}
+                        icon="🍭"
+                        tooltipContent="Blood sugar level after 8 hours of fasting. Key indicator for diabetes."
+                        testName="Fasting Plasma Glucose (FPG)"
+                        location="Pathology Lab / Home Glucometer"
+                    />
+                    <RangeSlider
+                        label="Resting BP"
+                        value={diabetesData.bp}
+                        onChange={(e) => handleChange(e, 'bp', 'diabetes')}
+                        min={80} max={200} unit="mm Hg"
+                        normalRange={{ min: 90, max: 120 }}
+                        icon="🩸"
+                        tooltipContent="Pressure in arteries when heart rests between beats. High values strain the heart."
+                        testName="Blood Pressure Reading"
+                        location="Doctor's Clinic / Pharmacy / Home Monitor"
+                    />
+                    <RangeSlider
+                        label="Serum Cholesterol"
+                        value={heartData.cholesterol}
+                        onChange={(e) => handleChange(e, 'cholesterol', 'heart')}
+                        min={100} max={500} unit="mg/dL"
+                        normalRange={{ min: 100, max: 199 }}
+                        icon="🍟"
+                        tooltipContent="Total amount of cholesterol in blood. High levels can lead to clogged arteries."
+                        testName="Lipid Profile"
+                        location="Pathology Lab (Blood Draw)"
+                    />
+                    <RangeSlider
+                        label="Max Heart Rate"
+                        value={heartData.maxHeartRate}
+                        onChange={(e) => handleChange(e, 'maxHeartRate', 'heart')}
+                        min={60} max={220} unit="bpm"
+                        normalRange={{ min: 100, max: 190 }}
+                        icon="❤️"
+                        tooltipContent="Highest heart rate achieved during maximum physical exertion."
+                        testName="Cardiac Stress Test"
+                        location="Cardiology Center"
+                    />
+                    <RangeSlider
+                        label="Insulin Level"
+                        value={diabetesData.insulin}
+                        onChange={(e) => handleChange(e, 'insulin', 'diabetes')}
+                        min={0} max={600} unit="mu U/ml"
+                        normalRange={{ min: 3, max: 25 }}
+                        icon="💉"
+                        tooltipContent="Hormone that regulates blood sugar. High levels may indicate insulin resistance."
+                        testName="Fasting Insulin / C-Peptide"
+                        location="Pathology Lab (Blood Draw)"
+                    />
+                    <RangeSlider
+                        label="BMI"
+                        value={diabetesData.bmi}
+                        onChange={(e) => handleChange(e, 'bmi', 'diabetes')}
+                        min={10} max={60} unit="kg/m²"
+                        normalRange={{ min: 18.5, max: 24.9 }}
+                        icon="⚖️"
+                        tooltipContent="Body Mass Index. Measure of body fat based on height and weight."
+                        testName="Body Composition Analysis"
+                        location="Home Calculation / Gym / Clinic"
+                    />
                 </div>
                 <div className="flex justify-between mt-10 pt-6 border-t border-stone-100 dark:border-slate-700">
                     <button onClick={prevStep} className="text-stone-500 dark:text-slate-400 font-bold hover:text-stone-800 dark:hover:text-slate-200 px-6 py-3 transition-colors">Back</button>

@@ -271,56 +271,11 @@ const SimSlider = ({ label, value, min, max, unit, onChange }) => (
     </div>
 );
 
-// Feature Component: Guidance Panel
-const GuidancePanel = ({ riskScore }) => {
-    let category = 'Low';
-    if (riskScore > 70) category = 'High';
-    else if (riskScore > 30) category = 'Moderate';
+// Feature Component: GuidancePanel (Dynamic)
+const GuidancePanel = ({ recommendations }) => {
+    if (!recommendations) return null;
 
-    const content = {
-        Low: {
-            do: [
-                "Maintain a balanced diet rich in whole foods",
-                "Continue 150 mins of moderate activity weekly",
-                "Schedule annual health checkups",
-                "Stay hydrated (8 glasses/day)"
-            ],
-            avoid: [
-                "Ignoring minor symptoms or changes",
-                "Prolonged periods of inactivity (> 2 hours)",
-                "Skipping meals or irregular eating"
-            ]
-        },
-        Moderate: {
-            do: [
-                "Reduce daily sodium and sugar intake",
-                "Increase cardio activity to 30 mins/day",
-                "Monitor blood pressure weekly",
-                "Practice daily stress management (meditation)"
-            ],
-            avoid: [
-                "Sedentary lifestyle (sitting all day)",
-                "Processed foods high in trans fats",
-                "Irregular sleep patterns (< 6 hours)"
-            ]
-        },
-        High: {
-            do: [
-                "Consult a specialist immediately",
-                "Follow a strict low-glycemic, low-sodium diet",
-                "Monitor vitals (BP, Glucose) daily",
-                "Prioritize 7-9 hours of restorative sleep"
-            ],
-            avoid: [
-                "Delaying medical advice or medication",
-                "High-sugar, high-fat, or fried foods",
-                "Smoking and alcohol consumption",
-                "High-stress environments without breaks"
-            ]
-        }
-    };
-
-    const activeContent = content[category];
+    const { category, do: doList, avoid: avoidList } = recommendations;
 
     return (
         <div className="mb-16 animate-fade-in-up">
@@ -343,7 +298,7 @@ const GuidancePanel = ({ riskScore }) => {
                         What You Should Do
                     </h4>
                     <ul className="space-y-4 relative z-10">
-                        {activeContent.do.map((item, i) => (
+                        {doList.map((item, i) => (
                             <li key={i} className="flex items-start gap-3">
                                 <svg className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                                 <span className="text-stone-700 dark:text-slate-300 font-medium leading-relaxed">{item}</span>
@@ -360,7 +315,7 @@ const GuidancePanel = ({ riskScore }) => {
                         What To Avoid
                     </h4>
                     <ul className="space-y-4 relative z-10">
-                        {activeContent.avoid.map((item, i) => (
+                        {avoidList.map((item, i) => (
                             <li key={i} className="flex items-start gap-3">
                                 <svg className="w-5 h-5 text-rose-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                 <span className="text-stone-700 dark:text-slate-300 font-medium leading-relaxed">{item}</span>
@@ -370,7 +325,7 @@ const GuidancePanel = ({ riskScore }) => {
                 </div>
             </div>
             <p className="mt-4 text-center text-xs text-stone-400 dark:text-slate-500">
-                * These suggestions are informational and not a substitute for professional medical advice.
+                * These suggestions are personalized based on your reported metrics. Consult a doctor for medical advice.
             </p>
         </div>
     );

@@ -34,23 +34,114 @@ const HealthChatbot = () => {
         }, 1500);
     };
 
+    // Comprehensive Knowledge Base
+    const knowledgeBase = {
+        glucose: {
+            keywords: ['glucose', 'sugar', 'diabetic', 'diabetes', 'fasting'],
+            definition: "Glucose is the main sugar in your blood and body's primary energy source. High levels can indicate diabetes.",
+            improvement: "Eat complex carbs (whole grains), fiber-rich foods, and leafy greens. Avoid sugary drinks and processed snacks.",
+            tests: "Fasting Blood Sugar (FBS), HbA1c (3-month average), and Oral Glucose Tolerance Test (OGTT)."
+        },
+        bp: {
+            keywords: ['bp', 'blood pressure', 'hypertension', 'systolic', 'diastolic'],
+            definition: "Blood pressure is the force of blood against artery walls. High BP (Hypertension) strains the heart.",
+            improvement: "Reduce sodium (salt) intake, manage stress, exercise regularly, and eat potassium-rich foods like bananas.",
+            tests: "Sphygmomanometer check (standard BP cuff), Ambulatory BP monitoring."
+        },
+        cholesterol: {
+            keywords: ['cholesterol', 'lipid', 'ldl', 'hdl', 'fat'],
+            definition: "A waxy substance used to build cells. LDL is 'bad' (clogs arteries), HDL is 'good' (clears them).",
+            improvement: "Avoid saturated/trans fats (fried food, red meat). Eat more soluble fiber (oats) and omega-3s (fish, walnuts).",
+            tests: "Lipid Profile (Total, LDL, HDL, Triglycerides)."
+        },
+        heartrate: {
+            keywords: ['heart rate', 'pulse', 'bpm', 'beats', 'tachycardia'],
+            definition: "The number of times your heart beats per minute. Resting HR > 100 (Tachycardia) can indicate stress or issues.",
+            improvement: "Regular aerobic exercise (running, swimming) strengthens the heart and lowers resting heart rate.",
+            tests: "ECG (Electrocardiogram), Holter Monitor, Stress Test."
+        },
+        bmi: {
+            keywords: ['bmi', 'body mass', 'weight', 'obesity', 'overweight'],
+            definition: "Body Mass Index (BMI) estimates body fat based on height and weight. >25 is overweight, >30 is obese.",
+            improvement: "Caloric deficit diet, regular physical activity, and strength training to build muscle.",
+            tests: "Body Composition Analysis, Waist-to-Hip Ratio."
+        },
+        insulin: {
+            keywords: ['insulin', 'hormone', 'resistance'],
+            definition: "A hormone that helps enter cells for energy. High levels often mean Insulin Resistance.",
+            improvement: "Intermittent fasting, low-carb diets (Keto), and regular exercise improve insulin sensitivity.",
+            tests: "Fasting Insulin Level, HOMA-IR."
+        },
+        stress: {
+            keywords: ['stress', 'cortisol', 'anxiety', 'mental', 'tension'],
+            definition: "Body's reaction to pressure. Chronic stress raises Cortisol, damaging heart and metabolic health.",
+            improvement: "Mindfulness meditation, deep breathing exercises, adequate sleep, and therapy.",
+            tests: "Salivary Cortisol Test, Perceived Stress Scale (PSS)."
+        },
+        sleep: {
+            keywords: ['sleep', 'insomnia', 'rest', 'tired'],
+            definition: "Vital for recovery. Poor sleep increases risks of heart disease, obesity, and depression.",
+            improvement: "Stick to a schedule, avoid screens before bed (blue light), and keep the room cool and dark.",
+            tests: "Polysomnography (Sleep Study)."
+        },
+        liver: {
+            keywords: ['liver', 'bilirubin', 'jaundice', 'enzyme', 'sgot', 'sgpt', 'alt', 'ast'],
+            definition: "The liver filters blood and detoxifies chemicals. Enzymes like ALT/AST spill into blood when liver is damaged.",
+            improvement: "Avoid alcohol, limit tylenol/medications processed by liver, maintain healthy weight to prevent fatty liver.",
+            tests: "Liver Function Test (LFT), Ultrasound, FibroScan."
+        }
+    };
+
+    const [lastTopic, setLastTopic] = useState(null); // Context memory
+
     const generateResponse = (query) => {
         const q = query.toLowerCase();
 
-        if (q.includes('glucose') || q.includes('sugar')) {
-            if (diabetesData.glucose > 140) return `Your glucose of ${diabetesData.glucose} mg/dL suggests insulin resistance. We recommend a Hba1c follow-up.`;
-            return `Your glucose of ${diabetesData.glucose || 'N/A'} is within normal range, suggesting good metabolic health.`;
+        // 1. Context Resolution (Handle "it", "that", "improve")
+        let activeTopic = null;
+
+        // Check for specific topic keywords in current query
+        for (const [key, data] of Object.entries(knowledgeBase)) {
+            if (data.keywords.some(k => q.includes(k))) {
+                activeTopic = key;
+                setLastTopic(key); // Update context
+                break;
+            }
         }
 
-        if (q.includes('heart') || q.includes('cardio')) {
-            return "I'm tracking key signals like Chest Pain type and Max Heart Rate. Ensure you maintain aerobic activity levels.";
+        // If no new topic found, use last context for "that/it/improve" queries
+        if (!activeTopic && lastTopic && (q.includes('that') || q.includes('it') || q.includes('this') || q.includes('improve') || q.includes('diet') || q.includes('food'))) {
+            activeTopic = lastTopic;
         }
 
+        // 2. Direct Data Context Checks (Specific Overrides)
+        if ((q.includes('my') || q.includes('score')) && (q.includes('glucose') || q.includes('sugar'))) {
+            // ... existing logic ...
+            if (diabetesData.glucose > 140) return `Your glucose of ${diabetesData.glucose} mg/dL is high. Consult a doctor.`;
+            return `Your glucose (${diabetesData.glucose}) is normal.`;
+        }
+
+        // 3. Knowledge Base Response
+        if (activeTopic) {
+            const data = knowledgeBase[activeTopic];
+
+            // Determine Intent
+            if (q.includes('food') || q.includes('eat') || q.includes('diet') || q.includes('lower') || q.includes('improve') || q.includes('advice')) {
+                return `🍎 **Diet & Advice for ${activeTopic.charAt(0).toUpperCase() + activeTopic.slice(1)}:** ${data.improvement}`;
+            }
+            if (q.includes('test') || q.includes('check') || q.includes('monitor')) {
+                return `🩺 **Tests for ${activeTopic.charAt(0).toUpperCase() + activeTopic.slice(1)}:** ${data.tests}`;
+            }
+            // Default Definition
+            return `**${activeTopic.charAt(0).toUpperCase() + activeTopic.slice(1)}:** ${data.definition}\n\n💡 *Tip: Ask about 'foods' or 'tests' for this.*`;
+        }
+
+        // 4. Fallback
         if (q.includes('risk') || q.includes('score')) {
             return "Your scores are calculated using a Random Forest model trained on the Kaggle health dataset.";
         }
 
-        return "I can help explain your risk factors. Ask about 'glucose', 'blood pressure', or 'dietary advice'.";
+        return "I can explain any input field (Glucose, BP, BMI, Liver Enzymes, Stress, etc.). Try asking: 'What foods lower BP?' or 'What is Bilirubin?'";
     };
 
     return (
@@ -81,8 +172,8 @@ const HealthChatbot = () => {
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.type === 'user'
-                                        ? 'bg-gradient-to-br from-cyan-500 to-teal-600 text-white rounded-tr-sm'
-                                        : 'bg-white text-slate-600 border border-slate-200/50 rounded-tl-sm shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
+                                    ? 'bg-gradient-to-br from-cyan-500 to-teal-600 text-white rounded-tr-sm'
+                                    : 'bg-white text-slate-600 border border-slate-200/50 rounded-tl-sm shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
                                     }`}>
                                     {msg.text}
                                 </div>

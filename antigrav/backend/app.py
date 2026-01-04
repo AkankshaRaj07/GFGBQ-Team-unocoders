@@ -3,8 +3,13 @@ from flask_cors import CORS
 import pandas as pd
 import joblib
 import os
+from recommendations import generate_recommendations
 
-app = Flask(__name__)
+
+# Production Configuration: Serve React Build
+# Assumes 'frontend/dist' exists relative to this file
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')
+app = Flask(__name__, static_folder=frontend_dist, static_url_path='/')
 CORS(app)  # Enable CORS for all routes
 
 # Define model paths
@@ -264,6 +269,29 @@ def predict_mental():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+
+# NEW ROUTE: Recommendations
+@app.route('/predict/recommendations', methods=['POST'])
+def predict_recommendations():
+    try:
+        data = request.json
+        # Expecting full user data object
+        recs = generate_recommendations(data)
+        return jsonify(recs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return app.send_static_file(path)
+    else:
+        return app.send_static_file('index.html')
+
 if __name__ == '__main__':
     print("Starting Flask Server on port 5000...")
     app.run(port=5000, debug=True)
+
